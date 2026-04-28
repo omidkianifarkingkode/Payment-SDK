@@ -1,0 +1,18 @@
+{
+    "name": "com.kingkode.payment-sdk.editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d8c47a02ea891ce4a94121a5ed1d1dcd"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

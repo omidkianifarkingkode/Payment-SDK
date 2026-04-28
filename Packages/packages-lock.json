@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.kingkode.mini-di": {
-      "version": "https://github.com/omidkianifarkingkode/MiniDI.git?path=Assets/MiniDI",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "c5d218589d0e0875d64cc7620ddd2191a17f7311"
-    },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
       "depth": 1,
