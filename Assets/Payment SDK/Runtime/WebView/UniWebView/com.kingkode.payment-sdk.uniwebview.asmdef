@@ -1,0 +1,19 @@
+{
+    "name": "com.kingkode.payment-sdk.uniwebview",
+    "rootNamespace": "",
+    "references": [
+        "UniWebView-CSharp",
+        "com.kingkode.payment-sdk"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "GAME_PAYMENT_UNIWEBVIEW"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
