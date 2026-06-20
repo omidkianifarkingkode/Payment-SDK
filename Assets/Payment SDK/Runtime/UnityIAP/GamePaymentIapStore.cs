@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Purchasing;
 using UnityEngine.Purchasing.Extension;
+using System.Threading.Tasks;
 using UnityPurchaseFailureReason = UnityEngine.Purchasing.PurchaseFailureReason;
 
 namespace GamePaymentSDK.UnityIAP
@@ -15,6 +16,7 @@ namespace GamePaymentSDK.UnityIAP
     public sealed class GamePaymentIapStore : IStore, IDisposable
     {
         private readonly PaymentSettings _settings;
+        private readonly string _playerId;
         private readonly IPaymentWebViewService _webViewService;
         private readonly ILogger _logger;
         private IStoreCallback _callback;
@@ -25,10 +27,12 @@ namespace GamePaymentSDK.UnityIAP
 
         public GamePaymentIapStore(
             PaymentSettings settings,
+            string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
             _settings = settings;
+            _playerId = playerId;
             _webViewService = webViewService;
             _logger = logger;
         }
@@ -93,7 +97,7 @@ namespace GamePaymentSDK.UnityIAP
             _controller.ConfirmPurchaseProcessed(purchase);
         }
 
-        private async System.Threading.Tasks.Task RetrieveProductsAsync(
+        private async Task RetrieveProductsAsync(
             ReadOnlyCollection<ProductDefinition> requestedProducts
         )
         {
@@ -245,6 +249,7 @@ namespace GamePaymentSDK.UnityIAP
 
             _controller = new GamePaymentController(
                 _settings,
+                _playerId,
                 _webViewService,
                 _logger
             );
@@ -271,7 +276,7 @@ namespace GamePaymentSDK.UnityIAP
                 );
             }
 
-            if (string.IsNullOrWhiteSpace(_settings.PlayerId))
+            if (string.IsNullOrWhiteSpace(_playerId))
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidPlayerId,

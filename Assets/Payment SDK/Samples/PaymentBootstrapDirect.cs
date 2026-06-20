@@ -9,10 +9,6 @@ namespace GamePaymentSDK.Samples
 {
     public sealed class PaymentBootstrapDirect : MonoBehaviour
     {
-        [Header("Payment Service")]
-        [Tooltip("Payment data asset. If left empty, loads Resources/" + PaymentSettings.DefaultResourcePath + ".")]
-        [SerializeField] private PaymentSettings _settings;
-
         [Header("WebView")]
         [Tooltip("Assign UniWebViewPaymentService here for device builds.")]
         [SerializeField] private MonoBehaviour _deviceWebViewService;
@@ -24,22 +20,22 @@ namespace GamePaymentSDK.Samples
         [SerializeField] private PaymentProductListUI _productListUI;
         [SerializeField] private PaymentRewardGrantExample _rewardGrant;
 
+        private PaymentSettings _settings;
         private ILogger _logger;
+        private IPaymentWebViewService _webViewService;
+        private bool _ready;
 
-        private async void Start()
+        private void Start()
         {
-            PaymentSettings settings = PaymentSettings.Resolve(_settings);
+            _settings = PaymentSettings.Load();
 
-            if (settings == null)
+            if (_settings == null)
             {
-                Debug.LogError(
-                    "[PaymentBootstrapDirect] PaymentSettings is missing. Assign one in the inspector " +
-                    "or create it via Tools > Game Payment SDK > Create Payment Settings."
-                );
+                Debug.LogError("[PaymentBootstrapDirect] PaymentSettings asset not found. Create one via Tools > Game Payment SDK > Create Payment Settings.");
                 return;
             }
 
-            if (!settings.IsValid(out string configError))
+            if (!_settings.IsValid(out string configError))
             {
                 Debug.LogError($"[PaymentBootstrapDirect] PaymentSettings is invalid: {configError}");
                 return;
@@ -47,19 +43,34 @@ namespace GamePaymentSDK.Samples
 
             _logger = new Logger(Debug.unityLogger.logHandler)
             {
-                logEnabled = settings.LogEnabled,
-                filterLogType = settings.LogLevel
+                logEnabled = _settings.LogEnabled,
+                filterLogType = _settings.LogLevel
             };
 
-            IPaymentWebViewService webViewService = ResolveWebViewService(settings);
+            _webViewService = ResolveWebViewService();
 
-            if (webViewService == null)
+            if (_webViewService == null)
             {
                 Debug.LogError("[PaymentBootstrapDirect] WebView service is missing or invalid.");
                 return;
             }
 
-            webViewService.Logger = _logger;
+            _ready = true;
+        }
+
+        /// <summary>
+        /// Call this (e.g. via UnityEvent) once the player identity is known.
+        /// Triggers SDK initialization with the resolved player ID.
+        /// </summary>
+        public async void Initialize(string playerId)
+        {
+            if (!_ready)
+            {
+                Debug.LogError("[PaymentBootstrapDirect] Cannot initialize: setup failed. Check earlier errors.");
+                return;
+            }
+
+            _webViewService.Logger = _logger;
 
             GamePayment.Initialized += HandleInitialized;
             GamePayment.ProductsUpdated += HandleProductsUpdated;
@@ -67,7 +78,7 @@ namespace GamePaymentSDK.Samples
             GamePayment.PurchaseFailed += HandlePurchaseFailed;
 
             PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
-                await GamePayment.InitializeAsync(settings, webViewService, _logger);
+                await GamePayment.InitializeAsync(_settings, playerId, _webViewService, _logger);
 
             if (!result.Success)
             {
@@ -115,12 +126,12 @@ namespace GamePaymentSDK.Samples
             }
         }
 
-        private IPaymentWebViewService ResolveWebViewService(PaymentSettings settings)
+        private IPaymentWebViewService ResolveWebViewService()
         {
 #if UNITY_EDITOR
             if (_mockWebViewService != null)
             {
-                _mockWebViewService.SetSettings(settings);
+                _mockWebViewService.SetSettings(_settings);
                 _mockWebViewService.Logger = _logger;
                 return _mockWebViewService;
             }
@@ -192,6 +203,7 @@ namespace GamePaymentSDK.Samples
             GamePayment.PurchaseFailed -= HandlePurchaseFailed;
 
             GamePayment.Dispose();
+            _settings?.Dispose();
         }
     }
 }

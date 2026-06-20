@@ -6,29 +6,25 @@ using UnityEngine;
 
 public sealed class PaymentBootstrap : MonoBehaviour
 {
-    [Header("Payment Settings")]
-    [Tooltip("Payment data asset. If left empty, loads Resources/" + PaymentSettings.DefaultResourcePath + ".")]
-    [SerializeField] private PaymentSettings _settings;
-
     [Header("WebView")]
     [SerializeField] private MonoBehaviour _webViewServiceComponent;
 
+    private PaymentSettings _settings;
     private ILogger _logger;
+    private IPaymentWebViewService _webViewService;
+    private bool _ready;
 
-    private async void Start()
+    private void Start()
     {
-        PaymentSettings settings = PaymentSettings.Resolve(_settings);
+        _settings = PaymentSettings.Load();
 
-        if (settings == null)
+        if (_settings == null)
         {
-            Debug.LogError(
-                "[PaymentBootstrap] PaymentSettings is missing. Assign one in the inspector " +
-                "or create it via Tools > Game Payment SDK > Create Payment Settings."
-            );
+            Debug.LogError("[PaymentBootstrap] PaymentSettings asset not found. Create one via Tools > Game Payment SDK > Create Payment Settings.");
             return;
         }
 
-        if (!settings.IsValid(out string configError))
+        if (!_settings.IsValid(out string configError))
         {
             Debug.LogError($"[PaymentBootstrap] PaymentSettings is invalid: {configError}");
             return;
@@ -36,8 +32,8 @@ public sealed class PaymentBootstrap : MonoBehaviour
 
         _logger = new Logger(Debug.unityLogger.logHandler)
         {
-            logEnabled = settings.LogEnabled,
-            filterLogType = settings.LogLevel
+            logEnabled = _settings.LogEnabled,
+            filterLogType = _settings.LogLevel
         };
 
         if (_webViewServiceComponent is not IPaymentWebViewService webViewService)
@@ -46,7 +42,23 @@ public sealed class PaymentBootstrap : MonoBehaviour
             return;
         }
 
-        webViewService.Logger = _logger;
+        _webViewService = webViewService;
+        _ready = true;
+    }
+
+    /// <summary>
+    /// Call this (e.g. via UnityEvent) once the player identity is known.
+    /// Triggers SDK initialization with the resolved player ID.
+    /// </summary>
+    public async void Initialize(string playerId)
+    {
+        if (!_ready)
+        {
+            Debug.LogError("[PaymentBootstrap] Cannot initialize: setup failed. Check earlier errors.");
+            return;
+        }
+
+        _webViewService.Logger = _logger;
 
         GamePayment.Initialized += OnInitialized;
         GamePayment.ProductsUpdated += OnProductsUpdated;
@@ -54,7 +66,7 @@ public sealed class PaymentBootstrap : MonoBehaviour
         GamePayment.PurchaseFailed += OnPurchaseFailed;
 
         PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
-            await GamePayment.InitializeAsync(settings, webViewService, _logger);
+            await GamePayment.InitializeAsync(_settings, playerId, _webViewService, _logger);
 
         if (!result.Success)
         {
@@ -80,14 +92,11 @@ public sealed class PaymentBootstrap : MonoBehaviour
     private void OnPurchaseSucceeded(PaymentPurchaseResult result)
     {
         _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentBootstrap] Purchase succeeded. product={result.ProductKey}, order={result.OrderId}");
-
-        // Grant reward here.
     }
 
     private void OnPurchaseFailed(PaymentPurchaseFailedEventArgs args)
     {
-        _logger.Log(LogType.Warning, $"[PaymentSdk] [PaymentBootstrap] Purchase failed." +
-            $" product={args.ProductKey}, reason={args.FailureReason}, error={args.ErrorMessage}");
+        _logger.Log(LogType.Warning, $"[PaymentSdk] [PaymentBootstrap] Purchase failed. product={args.ProductKey}, reason={args.FailureReason}, error={args.ErrorMessage}");
     }
 
     private void OnDestroy()
@@ -98,5 +107,6 @@ public sealed class PaymentBootstrap : MonoBehaviour
         GamePayment.PurchaseFailed -= OnPurchaseFailed;
 
         GamePayment.Dispose();
+        _settings?.Dispose();
     }
 }

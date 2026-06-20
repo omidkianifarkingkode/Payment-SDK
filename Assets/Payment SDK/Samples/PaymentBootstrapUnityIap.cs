@@ -12,10 +12,6 @@ namespace GamePaymentSDK.Samples
 {
     public sealed class PaymentBootstrapUnityIap : MonoBehaviour, IDetailedStoreListener
     {
-        [Header("Payment Settings")]
-        [Tooltip("Payment data asset. If left empty, loads Resources/" + PaymentSettings.DefaultResourcePath + ".")]
-        [SerializeField] private PaymentSettings _settings;
-
         [Header("Products")]
         [SerializeField] private string[] _productKeys =
         {
@@ -30,13 +26,86 @@ namespace GamePaymentSDK.Samples
         [Header("Reward")]
         [SerializeField] private PaymentRewardGrantExample _rewardGrant;
 
+        private PaymentSettings _settings;
+        private ILogger _logger;
+        private IPaymentWebViewService _webViewService;
         private IStoreController _storeController;
         private IExtensionProvider _extensionProvider;
-        private ILogger _logger;
+        private bool _ready;
 
         private void Start()
         {
-            InitializePurchasing();
+            _settings = PaymentSettings.Load();
+
+            if (_settings == null)
+            {
+                Debug.LogError("[PaymentBootstrapUnityIap] PaymentSettings asset not found. Create one via Tools > Game Payment SDK > Create Payment Settings.");
+                return;
+            }
+
+            if (!_settings.IsValid(out string configError))
+            {
+                Debug.LogError($"[PaymentBootstrapUnityIap] PaymentSettings is invalid: {configError}");
+                return;
+            }
+
+            _logger = new Logger(Debug.unityLogger.logHandler)
+            {
+                logEnabled = _settings.LogEnabled,
+                filterLogType = _settings.LogLevel
+            };
+
+            _webViewService = ResolveWebViewService();
+
+            if (_webViewService == null)
+            {
+                _logger.Log(LogType.Error, "[PaymentSdk] [PaymentBootstrapUnityIap] WebView service is missing or invalid.");
+                return;
+            }
+
+            _ready = true;
+        }
+
+        /// <summary>
+        /// Call this (e.g. via UnityEvent) once the player identity is known.
+        /// Initializes Unity IAP with the Game Payment SDK store.
+        /// </summary>
+        public void Initialize(string playerId)
+        {
+            if (!_ready)
+            {
+                Debug.LogError("[PaymentBootstrapUnityIap] Cannot initialize: setup failed. Check earlier errors.");
+                return;
+            }
+
+            _webViewService.Logger = _logger;
+
+            GamePaymentIapModule paymentModule = GamePaymentIapModule.Instance(
+                _settings,
+                playerId,
+                _webViewService,
+                _logger
+            );
+
+            ConfigurationBuilder builder = ConfigurationBuilder.Instance(
+                paymentModule,
+                StandardPurchasingModule.Instance()
+            );
+
+            foreach (string productKey in _productKeys)
+            {
+                if (string.IsNullOrWhiteSpace(productKey))
+                    continue;
+
+                IDs ids = new IDs
+                {
+                    { productKey, GamePaymentIapStoreConstants.StoreName }
+                };
+
+                builder.AddProduct(productKey, ProductType.Consumable, ids);
+            }
+
+            UnityPurchasing.Initialize(this, builder);
         }
 
         public void BuyProduct(string productKey)
@@ -64,78 +133,12 @@ namespace GamePaymentSDK.Samples
             _storeController.InitiatePurchase(product);
         }
 
-        private void InitializePurchasing()
-        {
-            PaymentSettings settings = PaymentSettings.Resolve(_settings);
-
-            if (settings == null)
-            {
-                Debug.LogError(
-                    "[PaymentBootstrapUnityIap] PaymentSettings is missing. Assign one in the inspector " +
-                    "or create it via Tools > Game Payment SDK > Create Payment Settings."
-                );
-                return;
-            }
-
-            if (!settings.IsValid(out string configError))
-            {
-                Debug.LogError($"[PaymentBootstrapUnityIap] PaymentSettings is invalid: {configError}");
-                return;
-            }
-
-            _logger = new Logger(Debug.unityLogger.logHandler)
-            {
-                logEnabled = settings.LogEnabled,
-                filterLogType = settings.LogLevel
-            };
-
-            IPaymentWebViewService webViewService = ResolveWebViewService(settings);
-
-            if (webViewService == null)
-            {
-                _logger.Log(LogType.Error, "[PaymentSdk] [PaymentBootstrapUnityIap] WebView service is missing or invalid.");
-                return;
-            }
-
-            webViewService.Logger = _logger;
-
-            GamePaymentIapModule paymentModule = GamePaymentIapModule.Instance(
-                settings,
-                webViewService,
-                _logger
-            );
-
-            ConfigurationBuilder builder = ConfigurationBuilder.Instance(
-                paymentModule,
-                StandardPurchasingModule.Instance()
-            );
-
-            foreach (string productKey in _productKeys)
-            {
-                if (string.IsNullOrWhiteSpace(productKey))
-                    continue;
-
-                IDs ids = new IDs
-                {
-                    { productKey, GamePaymentIapStoreConstants.StoreName }
-                };
-
-                builder.AddProduct(
-                    productKey,
-                    ProductType.Consumable,
-                    ids
-                );
-            }
-
-            UnityPurchasing.Initialize(this, builder);
-        }
-
-        private IPaymentWebViewService ResolveWebViewService(PaymentSettings settings)
+        private IPaymentWebViewService ResolveWebViewService()
         {
 #if UNITY_EDITOR
             if (_mockWebViewService != null)
             {
-                _mockWebViewService.SetSettings(settings);
+                _mockWebViewService.SetSettings(_settings);
                 _mockWebViewService.Logger = _logger;
                 return _mockWebViewService;
             }
@@ -147,14 +150,10 @@ namespace GamePaymentSDK.Samples
             return null;
         }
 
-        public void OnInitialized(
-            IStoreController controller,
-            IExtensionProvider extensions
-        )
+        public void OnInitialized(IStoreController controller, IExtensionProvider extensions)
         {
             _storeController = controller;
             _extensionProvider = extensions;
-
             Debug.Log("[PaymentBootstrapUnityIap] Unity IAP initialized.");
         }
 
@@ -163,14 +162,9 @@ namespace GamePaymentSDK.Samples
             Debug.LogWarning($"[PaymentBootstrapUnityIap] Initialize failed: {error}");
         }
 
-        public void OnInitializeFailed(
-            InitializationFailureReason error,
-            string message
-        )
+        public void OnInitializeFailed(InitializationFailureReason error, string message)
         {
-            Debug.LogWarning(
-                $"[PaymentBootstrapUnityIap] Initialize failed: {error}, message={message}"
-            );
+            Debug.LogWarning($"[PaymentBootstrapUnityIap] Initialize failed: {error}, message={message}");
         }
 
         public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args)
@@ -178,7 +172,7 @@ namespace GamePaymentSDK.Samples
             Product product = args.purchasedProduct;
 
             Debug.Log(
-                $"[PaymentBootstrapUnityIap] ProcessPurchase. product={product.definition.id}, transactionId={product.transactionID}, receipt={product.receipt}"
+                $"[PaymentBootstrapUnityIap] ProcessPurchase. product={product.definition.id}, transactionId={product.transactionID}"
             );
 
             if (_rewardGrant != null)
@@ -187,24 +181,23 @@ namespace GamePaymentSDK.Samples
             return PurchaseProcessingResult.Complete;
         }
 
-        public void OnPurchaseFailed(
-            Product product,
-            UnityEngine.Purchasing.PurchaseFailureReason failureReason
-        )
+        public void OnPurchaseFailed(Product product, UnityEngine.Purchasing.PurchaseFailureReason failureReason)
         {
             Debug.LogWarning(
                 $"[PaymentBootstrapUnityIap] Purchase failed. product={product?.definition?.id}, reason={failureReason}"
             );
         }
 
-        public void OnPurchaseFailed(
-            Product product,
-            PurchaseFailureDescription failureDescription
-        )
+        public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
         {
             Debug.LogWarning(
                 $"[PaymentBootstrapUnityIap] Purchase failed. product={product?.definition?.id}, reason={failureDescription.reason}, message={failureDescription.message}"
             );
+        }
+
+        private void OnDestroy()
+        {
+            _settings?.Dispose();
         }
     }
 }

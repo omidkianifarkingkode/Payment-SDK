@@ -1,5 +1,6 @@
 using GamePaymentSDK.Services;
 using NUnit.Framework;
+using GamePaymentSDK.Core;
 
 namespace GamePaymentSDK.Tests.EditMode
 {

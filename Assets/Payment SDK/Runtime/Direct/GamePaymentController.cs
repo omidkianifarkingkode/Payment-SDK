@@ -20,6 +20,7 @@ namespace GamePaymentSDK.Direct
         public event Action<PaymentPurchaseFailedEventArgs> PurchaseFailed;
 
         private readonly PaymentSettings _settings;
+        private readonly string _playerId;
         private readonly ILogger _logger;
         private readonly IPaymentApiClient _apiClient;
         private readonly IPendingOrderStorage _pendingOrderStorage;
@@ -44,20 +45,22 @@ namespace GamePaymentSDK.Direct
             _purchaseFlowService != null &&
             _purchaseFlowService.IsPurchaseInProgress;
 
-        public string PlayerId => _settings.PlayerId;
+        public string PlayerId => _playerId;
 
         public GamePaymentController(
             PaymentSettings settings,
+            string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
             _settings = settings;
+            _playerId = playerId;
             _logger = logger;
             _apiClient = new PaymentApiClient(settings, _logger);
 
-            _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(settings.PlayerId, _logger);
+            _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(playerId, _logger);
 
-            _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(settings.PlayerId, _logger);
+            _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(playerId, _logger);
 
             _localCleanupService = new PaymentLocalCleanupService(
                 settings,
@@ -132,7 +135,7 @@ namespace GamePaymentSDK.Direct
 
             if (!validation.Success)
             {
-                PaymentInitializedEventArgs failedArgs = new PaymentInitializedEventArgs(
+                PaymentInitializedEventArgs failedArgs = new(
                     false,
                     Array.Empty<PaymentProduct>(),
                     validation.FailureReason,
@@ -253,7 +256,7 @@ namespace GamePaymentSDK.Direct
             }
 
             PaymentResult<List<PaymentPurchaseResult>> result =
-                await _purchaseFlowService.PurchaseAsync(_settings.PlayerId, productKey);
+                await _purchaseFlowService.PurchaseAsync(_playerId, productKey);
 
             if (result.Success)
             {
@@ -282,7 +285,7 @@ namespace GamePaymentSDK.Direct
             }
 
             PaymentResult<List<PaymentPurchaseResult>> result =
-                await _paymentClaimService.ClaimLocalPendingOrdersAsync(_settings.PlayerId);
+                await _paymentClaimService.ClaimLocalPendingOrdersAsync(_playerId);
 
             if (result.Success)
             {
@@ -346,7 +349,7 @@ namespace GamePaymentSDK.Direct
                 );
             }
 
-            if (string.IsNullOrWhiteSpace(_settings.PlayerId))
+            if (string.IsNullOrWhiteSpace(_playerId))
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidPlayerId,

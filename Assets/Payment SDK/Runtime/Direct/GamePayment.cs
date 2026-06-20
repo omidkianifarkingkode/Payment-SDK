@@ -35,6 +35,7 @@ namespace GamePaymentSDK.Direct
 
         public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(
             PaymentSettings settings,
+            string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
@@ -44,6 +45,7 @@ namespace GamePaymentSDK.Direct
 
             _controller = new GamePaymentController(
                 settings,
+                playerId,
                 webViewService,
                 logger
             );

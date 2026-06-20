@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace GamePaymentSDK.Core
@@ -24,9 +25,6 @@ namespace GamePaymentSDK.Core
         [Tooltip("Client API key. The server resolves the client from this key.")]
         [SerializeField] private string _apiKey;
 
-        [Tooltip("Stable player identifier used for purchase/claim.")]
-        [SerializeField] private string _playerId;
-
         [Header("Environment")]
         [SerializeField] private PaymentEnvironment _environment = PaymentEnvironment.Production;
 
@@ -45,7 +43,6 @@ namespace GamePaymentSDK.Core
 
         public string BaseUrl => _baseUrl;
         public string ApiKey => _apiKey;
-        public string PlayerId => _playerId;
         public PaymentEnvironment Environment => _environment;
         public int RequestTimeoutSeconds => _requestTimeoutSeconds;
         public int WebViewTimeoutSeconds => _webViewTimeoutSeconds;
@@ -81,64 +78,34 @@ namespace GamePaymentSDK.Core
             return _baseUrl.TrimEnd('/');
         }
 
-        /// <summary>
-        /// Loads the default <see cref="PaymentSettings"/> asset from
-        /// Resources/GamePayment/PaymentSettings, or null if none exists.
-        /// </summary>
-        public static PaymentSettings LoadDefault()
-        {
-            return Resources.Load<PaymentSettings>(DefaultResourcePath);
-        }
-
-        // ---- Resolver: load the default asset once and cache it ----
-
         private static PaymentSettings _instance;
 
-        /// <summary>
-        /// The cached default settings instance. Loaded from Resources on first
-        /// access and reused afterwards (the static cache is cleared automatically
-        /// on domain reload / play-mode restart). Returns null if no asset exists.
-        /// </summary>
-        public static PaymentSettings Instance
+        public static PaymentSettings Load()
         {
-            get
+            if (_instance == null) 
             {
-                if (_instance == null)
-                    _instance = LoadDefault();
-
-                return _instance;
-            }
-        }
-
-        /// <summary>
-        /// Resolves the active settings: prefers an explicitly provided asset,
-        /// otherwise falls back to the cached default <see cref="Instance"/>.
-        /// </summary>
-        public static PaymentSettings Resolve(PaymentSettings preferred = null)
-        {
-            if (preferred != null)
-            {
-                _instance = preferred;
-                return preferred;
+                _instance = Resources.Load<PaymentSettings>(DefaultResourcePath);
             }
 
-            return Instance;
+            return _instance;
         }
 
         private void OnValidate()
         {
             _baseUrl = _baseUrl?.Trim();
             _apiKey = _apiKey?.Trim();
-            _playerId = _playerId?.Trim();
 
             if (string.IsNullOrWhiteSpace(_baseUrl))
                 Debug.LogWarning($"[PaymentSettings] BaseUrl is empty on '{name}'.", this);
 
             if (string.IsNullOrWhiteSpace(_apiKey))
                 Debug.LogWarning($"[PaymentSettings] ApiKey is empty on '{name}'.", this);
+        }
 
-            if (string.IsNullOrWhiteSpace(_playerId))
-                Debug.LogWarning($"[PaymentSettings] PlayerId is empty on '{name}'.", this);
+        public void Dispose()
+        {
+            Resources.UnloadAsset(_instance);
+            _instance = null;
         }
     }
 }

@@ -33,6 +33,7 @@ namespace GamePaymentSDK.Tests.EditMode
             SetField(_settings, "_baseUrl", "https://api.example.com");
             SetField(_settings, "_apiKey", "key");
             SetField(_settings, "_webViewTimeoutSeconds", 300);
+            // PlayerId is no longer part of PaymentSettings; passed directly to InitializeAsync / PurchaseAsync
 
             _requestService = new FakePaymentRequestService
             {
