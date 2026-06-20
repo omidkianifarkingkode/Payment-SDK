@@ -1,21 +1,19 @@
+using GamePaymentSDK.Core;
 using System;
 using System.Collections.Generic;
-using GamePaymentSDK.Core;
+using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
     public sealed class PaymentCallbackParser : IPaymentCallbackParser
     {
-        private readonly PaymentConfiguration _configuration;
+        private readonly ILogger _logger;
         private readonly string _expectedCallbackPath;
 
-        public PaymentCallbackParser(PaymentConfiguration configuration)
+        public PaymentCallbackParser(ILogger logger)
         {
-            _configuration = configuration;
-
-            //string clientId = configuration?.ClientId ?? string.Empty;
+            _logger = logger;
             _expectedCallbackPath = "/v1/payments/callback/";
-
         }
 
         public PaymentCallbackResult Parse(string url)
@@ -30,9 +28,6 @@ namespace GamePaymentSDK.Services
 
             if (string.IsNullOrWhiteSpace(url))
                 return result;
-
-            //if (_configuration == null || string.IsNullOrWhiteSpace(_configuration.ClientId))
-            //    return result;
 
             Uri uri;
 
@@ -99,8 +94,7 @@ namespace GamePaymentSDK.Services
 
         private Dictionary<string, string> ParseQuery(string queryString)
         {
-            Dictionary<string, string> result =
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string> result = new(StringComparer.OrdinalIgnoreCase);
 
             if (string.IsNullOrWhiteSpace(queryString))
                 return result;

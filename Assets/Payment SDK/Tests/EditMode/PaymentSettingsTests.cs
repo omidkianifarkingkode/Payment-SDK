@@ -7,16 +7,11 @@ namespace GamePaymentSDK.Tests.EditMode
 {
     public sealed class PaymentSettingsTests
     {
-        private static PaymentSettings CreateSettings(string baseUrl, string apiKey, string playerId)
+        private static PaymentSettings CreateSettings(string baseUrl, string apiKey)
         {
             PaymentSettings settings = ScriptableObject.CreateInstance<PaymentSettings>();
-
-            // Fields are private [SerializeField]; set them via reflection for the test
-            // rather than widening the runtime API.
             SetField(settings, "_baseUrl", baseUrl);
             SetField(settings, "_apiKey", apiKey);
-            SetField(settings, "_playerId", playerId);
-
             return settings;
         }
 
@@ -25,34 +20,16 @@ namespace GamePaymentSDK.Tests.EditMode
             FieldInfo field = target.GetType().GetField(
                 fieldName,
                 BindingFlags.Instance | BindingFlags.NonPublic);
-
             Assert.IsNotNull(field, $"Field '{fieldName}' not found on PaymentSettings.");
             field.SetValue(target, value);
         }
 
         [Test]
-        public void ToConfiguration_MapsBaseUrlAndApiKey()
+        public void IsValid_WithAllRequiredFields_ReturnsTrue()
         {
-            PaymentSettings settings = CreateSettings(
-                "https://api.example.com/api", "test-api-key", "player-1");
+            PaymentSettings settings = CreateSettings("https://api.example.com/api", "test-key");
 
-            PaymentConfiguration config = settings.ToConfiguration();
-
-            Assert.AreEqual("https://api.example.com/api", config.BaseUrl);
-            Assert.AreEqual("test-api-key", config.ApiKey);
-            // PlayerId is not part of PaymentConfiguration; it is exposed on the asset.
-            Assert.AreEqual("player-1", settings.PlayerId);
-
-            Object.DestroyImmediate(settings);
-        }
-
-        [Test]
-        public void ToConfiguration_ProducesValidConfig_WhenRequiredFieldsPresent()
-        {
-            PaymentSettings settings = CreateSettings(
-                "https://api.example.com/api", "test-api-key", "player-1");
-
-            bool valid = settings.ToConfiguration().IsValid(out string error);
+            bool valid = settings.IsValid(out string error);
 
             Assert.IsTrue(valid);
             Assert.IsNull(error);
@@ -61,16 +38,50 @@ namespace GamePaymentSDK.Tests.EditMode
         }
 
         [Test]
-        public void ToConfiguration_ProducesInvalidConfig_WhenEmpty()
+        public void IsValid_MissingBaseUrl_FailsWithBaseUrlError()
         {
-            PaymentSettings settings = CreateSettings(string.Empty, string.Empty, string.Empty);
+            PaymentSettings settings = CreateSettings("   ", "test-key");
 
-            bool valid = settings.ToConfiguration().IsValid(out string error);
+            bool valid = settings.IsValid(out string error);
 
             Assert.IsFalse(valid);
-            Assert.IsNotNull(error);
+            Assert.AreEqual("BaseUrl is required.", error);
 
             Object.DestroyImmediate(settings);
         }
+
+        [Test]
+        public void IsValid_MissingApiKey_FailsWithApiKeyError()
+        {
+            PaymentSettings settings = CreateSettings("https://api.example.com/api", null);
+
+            bool valid = settings.IsValid(out string error);
+
+            Assert.IsFalse(valid);
+            Assert.AreEqual("ApiKey is required.", error);
+
+            Object.DestroyImmediate(settings);
+        }
+
+        [Test]
+        public void GetNormalizedBaseUrl_TrimsTrailingSlash()
+        {
+            PaymentSettings settings = CreateSettings("https://api.example.com/api/", "key");
+
+            Assert.AreEqual("https://api.example.com/api", settings.GetNormalizedBaseUrl());
+
+            Object.DestroyImmediate(settings);
+        }
+
+        [Test]
+        public void GetNormalizedBaseUrl_WithEmptyBaseUrl_ReturnsEmpty()
+        {
+            PaymentSettings settings = CreateSettings(null, "key");
+
+            Assert.AreEqual(string.Empty, settings.GetNormalizedBaseUrl());
+
+            Object.DestroyImmediate(settings);
+        }
+
     }
 }

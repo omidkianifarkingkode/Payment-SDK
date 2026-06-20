@@ -19,10 +19,10 @@ namespace GamePaymentSDK.EditorTools
         private static readonly Color Sandbox = new Color(0.95f, 0.55f, 0.20f);   // orange
         private static readonly Color Production = new Color(0.18f, 0.70f, 0.45f);   // green
 
-        private SerializedProperty _baseUrl, _apiKey, _playerId, _environment;
+        private SerializedProperty _baseUrl, _apiKey, _environment;
         private SerializedProperty _requestTimeout, _webViewTimeout;
         private SerializedProperty _claimRetryCount, _pendingOrderCleanupDays, _processedTransactionHistoryDays;
-        private SerializedProperty _enableLogs;
+        private SerializedProperty _logEnabled, _logLevel;
 
         private bool _showApiKey;
 
@@ -30,14 +30,14 @@ namespace GamePaymentSDK.EditorTools
         {
             _baseUrl = serializedObject.FindProperty("_baseUrl");
             _apiKey = serializedObject.FindProperty("_apiKey");
-            _playerId = serializedObject.FindProperty("_playerId");
             _environment = serializedObject.FindProperty("_environment");
             _requestTimeout = serializedObject.FindProperty("_requestTimeoutSeconds");
             _webViewTimeout = serializedObject.FindProperty("_webViewTimeoutSeconds");
             _claimRetryCount = serializedObject.FindProperty("_claimRetryCount");
             _pendingOrderCleanupDays = serializedObject.FindProperty("_pendingOrderCleanupDays");
             _processedTransactionHistoryDays = serializedObject.FindProperty("_processedTransactionHistoryDays");
-            _enableLogs = serializedObject.FindProperty("_enableLogs");
+            _logEnabled = serializedObject.FindProperty("_logEnabled");
+            _logLevel = serializedObject.FindProperty("_logLevel");
         }
 
         public override void OnInspectorGUI()
@@ -53,7 +53,6 @@ namespace GamePaymentSDK.EditorTools
             {
                 EditorGUILayout.PropertyField(_baseUrl, new GUIContent("Base URL"));
                 DrawApiKeyField();
-                EditorGUILayout.PropertyField(_playerId, new GUIContent("Player Id"));
             });
 
             Card("Environment", EnvColor(), () =>
@@ -77,7 +76,9 @@ namespace GamePaymentSDK.EditorTools
 
             Card("Logging", Accent, () =>
             {
-                EditorGUILayout.PropertyField(_enableLogs, new GUIContent("Enable Logs"));
+                EditorGUILayout.PropertyField(_logEnabled, new GUIContent("Enable Logs"));
+                using (new EditorGUI.DisabledScope(!_logEnabled.boolValue))
+                    EditorGUILayout.PropertyField(_logLevel, new GUIContent("Log Level"));
             });
 
             EditorGUILayout.Space(6);
@@ -120,8 +121,7 @@ namespace GamePaymentSDK.EditorTools
         {
             bool hasBaseUrl = !string.IsNullOrWhiteSpace(_baseUrl.stringValue);
             bool hasApiKey = !string.IsNullOrWhiteSpace(_apiKey.stringValue);
-            bool hasPlayerId = !string.IsNullOrWhiteSpace(_playerId.stringValue);
-            bool complete = hasBaseUrl && hasApiKey && hasPlayerId;
+            bool complete = hasBaseUrl && hasApiKey;
 
             string label = complete ? "✓  Configuration complete" : "!  Missing required fields";
             Color color = complete ? Ok : Warn;
@@ -141,7 +141,6 @@ namespace GamePaymentSDK.EditorTools
             {
                 if (!hasBaseUrl) Bullet("Base URL");
                 if (!hasApiKey) Bullet("API Key");
-                if (!hasPlayerId) Bullet("Player Id");
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GamePaymentSDK.Core;
+using GamePaymentSDK.Direct;
 using UnityEngine;
 
 namespace GamePaymentSDK.Samples
@@ -11,6 +12,21 @@ namespace GamePaymentSDK.Samples
         [SerializeField] private PaymentProductButton _buttonPrefab;
 
         private readonly List<PaymentProductButton> _buttons = new();
+
+        private void Awake()
+        {
+            GamePayment.ProductsUpdated += (products) => 
+            {
+                BindProducts(products, async (item) => 
+                {
+                    SetInteractable(false);
+
+                    var result = await GamePayment.PurchaseAsync(item);
+
+                    SetInteractable(true);
+                });
+            };
+        }
 
         public void BindProducts(
             IReadOnlyCollection<PaymentProduct> products,

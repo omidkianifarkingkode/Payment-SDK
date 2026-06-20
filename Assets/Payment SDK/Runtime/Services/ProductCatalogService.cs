@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using GamePaymentSDK.Api;
 using GamePaymentSDK.Core;
+using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
@@ -22,18 +23,19 @@ namespace GamePaymentSDK.Services
     {
         private readonly IPaymentApiClient _apiClient;
         private readonly ProductCatalogCache _cache;
-
+        private readonly ILogger _logger;
         private bool _isInitializing;
 
         public bool IsReady => _cache.IsReady;
 
         public ProductCatalogService(
             IPaymentApiClient apiClient,
-            ProductCatalogCache cache
-        )
+            ProductCatalogCache cache,
+            ILogger logger)
         {
             _apiClient = apiClient;
             _cache = cache;
+            _logger = logger;
         }
 
         public async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync()
@@ -106,16 +108,14 @@ namespace GamePaymentSDK.Services
 
             try
             {
-                PaymentLogger.Log($"{operationName} product catalog started.");
+                _logger.Log(LogType.Log, $"[PaymentSdk] [ProductCatalogService] {operationName} product catalog started.");
 
                 PaymentResult<List<PaymentProduct>> result =
                     await _apiClient.GetProductsAsync();
 
                 if (!result.Success)
                 {
-                    PaymentLogger.LogWarning(
-                        $"{operationName} product catalog failed. Reason={result.FailureReason}, Error={result.ErrorMessage}"
-                    );
+                    _logger.Log(LogType.Error, $"[PaymentSdk] [ProductCatalogService] {operationName} product catalog failed. Reason={result.FailureReason}, Error={result.ErrorMessage}");
 
                     return PaymentResult<IReadOnlyCollection<PaymentProduct>>.Fail(
                         result.FailureReason,
@@ -127,9 +127,7 @@ namespace GamePaymentSDK.Services
 
                 _cache.SetProducts(validProducts);
 
-                PaymentLogger.Log(
-                    $"{operationName} product catalog completed. Count={validProducts.Count}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [ProductCatalogService] {operationName} product catalog completed. Count={validProducts.Count}");
 
                 return PaymentResult<IReadOnlyCollection<PaymentProduct>>.Ok(
                     _cache.GetAll()
@@ -137,9 +135,7 @@ namespace GamePaymentSDK.Services
             }
             catch (Exception exception)
             {
-                PaymentLogger.LogError(
-                    $"{operationName} product catalog exception. {exception.Message}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [ProductCatalogService] {operationName} product catalog exception. {exception.Message}");
 
                 return PaymentResult<IReadOnlyCollection<PaymentProduct>>.Fail(
                     PaymentFailureReason.Unknown,
@@ -154,12 +150,12 @@ namespace GamePaymentSDK.Services
 
         private List<PaymentProduct> FilterValidProducts(List<PaymentProduct> products)
         {
-            List<PaymentProduct> validProducts = new List<PaymentProduct>();
+            List<PaymentProduct> validProducts = new();
 
             if (products == null)
                 return validProducts;
 
-            HashSet<string> seenProductKeys = new HashSet<string>();
+            HashSet<string> seenProductKeys = new();
 
             foreach (PaymentProduct product in products)
             {
@@ -180,9 +176,7 @@ namespace GamePaymentSDK.Services
 
                 if (!seenProductKeys.Add(product.ProductKey))
                 {
-                    PaymentLogger.LogWarning(
-                        $"Duplicate productKey ignored. productKey={product.ProductKey}"
-                    );
+                    _logger.Log(LogType.Warning, $"[PaymentSdk] [ProductCatalogService] Duplicate productKey ignored. productKey={product.ProductKey}");
 
                     continue;
                 }

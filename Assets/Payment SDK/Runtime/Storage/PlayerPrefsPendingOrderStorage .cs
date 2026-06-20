@@ -18,25 +18,27 @@ namespace GamePaymentSDK.Storage
         private const string KeyPrefix = "GamePaymentSDK.PendingOrders";
 
         private readonly string _storageKey;
+        private readonly ILogger _logger;
 
-        public PlayerPrefsPendingOrderStorage( string playerId)
+        public PlayerPrefsPendingOrderStorage( string playerId, ILogger logger)
         {
             string safePlayerId = SanitizeKeyPart(playerId);
 
             _storageKey = $"{KeyPrefix}.{safePlayerId}";
+            _logger = logger;
         }
 
         public void Save(PendingOrder order)
         {
             if (order == null)
             {
-                PaymentLogger.LogWarning("Cannot save null pending order.");
+                _logger.Log(LogType.Error, "[PaymentSdk] [PlayerPrefsPendingOrderStorage] Cannot save null pending order.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(order.OrderId))
             {
-                PaymentLogger.LogWarning("Cannot save pending order without OrderId.");
+                _logger.Log(LogType.Error, "[PaymentSdk] [PlayerPrefsPendingOrderStorage] Cannot save pending order without OrderId.");
                 return;
             }
 
@@ -55,7 +57,7 @@ namespace GamePaymentSDK.Storage
 
             SaveCollection(collection);
 
-            PaymentLogger.Log($"Pending order saved. orderId={order.OrderId}, status={order.Status}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PlayerPrefsPendingOrderStorage] Pending order saved. orderId={order.OrderId}, status={order.Status}");
         }
 
         public bool TryGet(string orderId, out PendingOrder order)
@@ -91,7 +93,7 @@ namespace GamePaymentSDK.Storage
             if (removedCount > 0)
             {
                 SaveCollection(collection);
-                PaymentLogger.Log($"Pending order removed. orderId={orderId}");
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PlayerPrefsPendingOrderStorage] Pending order removed. orderId={orderId}");
             }
         }
 
@@ -108,10 +110,8 @@ namespace GamePaymentSDK.Storage
             if (removedCount > 0)
             {
                 SaveCollection(collection);
-        
-                PaymentLogger.Log(
-                    $"Old pending orders removed. count={removedCount}, olderThan={unixSeconds}"
-                );
+
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PlayerPrefsPendingOrderStorage] Old pending orders removed. count={removedCount}, olderThan={unixSeconds}");
             }
         
             return removedCount;
@@ -122,7 +122,7 @@ namespace GamePaymentSDK.Storage
             PlayerPrefs.DeleteKey(_storageKey);
             PlayerPrefs.Save();
 
-            PaymentLogger.Log("Pending order storage cleared.");
+            _logger.Log(LogType.Log, "[PaymentSdk] [PlayerPrefsPendingOrderStorage] Pending order storage cleared.");
         }
 
         private PendingOrderCollection LoadCollection()
@@ -152,7 +152,7 @@ namespace GamePaymentSDK.Storage
             }
             catch (Exception exception)
             {
-                PaymentLogger.LogWarning(
+                _logger.Log(LogType.Error,
                     $"Failed to parse pending order storage. Storage will be reset. {exception.Message}"
                 );
 

@@ -1,8 +1,9 @@
+using GamePaymentSDK.Core;
+using GamePaymentSDK.WebView;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using GamePaymentSDK.Core;
-using GamePaymentSDK.WebView;
+using UnityEngine;
 
 namespace GamePaymentSDK.Direct
 {
@@ -14,6 +15,10 @@ namespace GamePaymentSDK.Direct
         public static event Action<PaymentPurchaseFailedEventArgs> PurchaseFailed;
 
         private static GamePaymentController _controller;
+        private static ILogger _logger;
+
+        private static PaymentSettings _settings;
+        private static IPaymentWebViewService _webViewService;
 
         public static bool IsInitialized =>
             _controller != null &&
@@ -30,18 +35,44 @@ namespace GamePaymentSDK.Direct
         public static string PlayerId =>
             _controller?.PlayerId;
 
-        public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(
-            PaymentConfiguration configuration,
-            string playerId,
-            IPaymentWebViewService webViewService
-        )
+        /// <summary>
+        /// Stores the SDK configuration. Call this once from your bootstrap (e.g. in Start).
+        /// Afterwards call <see cref="InitializeAsync"/> when the player identity is known.
+        /// </summary>
+        internal static void Setup(
+            PaymentSettings settings,
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
+            _settings = settings;
+            _webViewService = webViewService;
+            _logger = logger;
+
+            if (_webViewService != null)
+                _webViewService.Logger = logger;
+        }
+
+        /// <summary>
+        /// Initializes the SDK with the resolved player identity.
+        /// Requires <see cref="Setup"/> to have been called first.
+        /// </summary>
+        public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(string playerId)
+        {
+            if (_settings == null)
+            {
+                return PaymentResult<IReadOnlyCollection<PaymentProduct>>.Fail(
+                    PaymentFailureReason.InvalidConfiguration,
+                    "Call GamePayment.Setup before InitializeAsync."
+                );
+            }
+
             Dispose();
 
             _controller = new GamePaymentController(
-                configuration,
+                _settings,
                 playerId,
-                webViewService
+                _webViewService,
+                _logger
             );
 
             HookControllerEvents(_controller);
@@ -101,13 +132,10 @@ namespace GamePaymentSDK.Direct
         {
             if (_controller == null)
             {
-                PaymentLogger.LogWarning(
-                    "Cannot confirm purchase because GamePayment is not initialized."
-                );
-        
+                _logger?.Log(LogType.Warning, "[PaymentSdk] [GamePayment] Cannot confirm purchase because GamePayment is not initialized.");
                 return;
             }
-        
+
             _controller.ConfirmPurchaseProcessed(purchase);
         }
 
@@ -137,24 +165,16 @@ namespace GamePaymentSDK.Direct
             controller.PurchaseFailed -= OnControllerPurchaseFailed;
         }
 
-        private static void OnControllerInitialized(PaymentInitializedEventArgs args)
-        {
+        private static void OnControllerInitialized(PaymentInitializedEventArgs args) =>
             Initialized?.Invoke(args);
-        }
 
-        private static void OnControllerProductsUpdated(IReadOnlyCollection<PaymentProduct> products)
-        {
+        private static void OnControllerProductsUpdated(IReadOnlyCollection<PaymentProduct> products) =>
             ProductsUpdated?.Invoke(products);
-        }
 
-        private static void OnControllerPurchaseSucceeded(PaymentPurchaseResult result)
-        {
+        private static void OnControllerPurchaseSucceeded(PaymentPurchaseResult result) =>
             PurchaseSucceeded?.Invoke(result);
-        }
 
-        private static void OnControllerPurchaseFailed(PaymentPurchaseFailedEventArgs args)
-        {
+        private static void OnControllerPurchaseFailed(PaymentPurchaseFailedEventArgs args) =>
             PurchaseFailed?.Invoke(args);
-        }
     }
 }
