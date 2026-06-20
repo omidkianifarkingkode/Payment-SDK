@@ -19,8 +19,7 @@ namespace GamePaymentSDK.Direct
         public event Action<PaymentPurchaseResult> PurchaseSucceeded;
         public event Action<PaymentPurchaseFailedEventArgs> PurchaseFailed;
 
-        private readonly PaymentConfiguration _configuration;
-        private readonly string _playerId;
+        private readonly PaymentSettings _settings;
         private readonly ILogger _logger;
         private readonly IPaymentApiClient _apiClient;
         private readonly IPendingOrderStorage _pendingOrderStorage;
@@ -45,25 +44,23 @@ namespace GamePaymentSDK.Direct
             _purchaseFlowService != null &&
             _purchaseFlowService.IsPurchaseInProgress;
 
-        public string PlayerId => _playerId;
+        public string PlayerId => _settings.PlayerId;
 
         public GamePaymentController(
-            PaymentConfiguration configuration,
-            string playerId,
+            PaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
-            _configuration = configuration;
-            _playerId = playerId;
+            _settings = settings;
             _logger = logger;
-            _apiClient = new PaymentApiClient(configuration, _logger);
+            _apiClient = new PaymentApiClient(settings, _logger);
 
-            _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(playerId, _logger);
+            _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(settings.PlayerId, _logger);
 
-            _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(playerId, _logger);
+            _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(settings.PlayerId, _logger);
 
             _localCleanupService = new PaymentLocalCleanupService(
-                configuration,
+                settings,
                 _pendingOrderStorage,
                 _processedTransactionStorage,
                 _logger
@@ -90,10 +87,10 @@ namespace GamePaymentSDK.Direct
                 _logger
             );
 
-            _callbackParser = new PaymentCallbackParser(configuration, _logger);
+            _callbackParser = new PaymentCallbackParser(_logger);
 
             _purchaseFlowService = new PaymentPurchaseFlowService(
-                configuration,
+                settings,
                 _paymentRequestService,
                 _paymentClaimService,
                 webViewService,
@@ -256,7 +253,7 @@ namespace GamePaymentSDK.Direct
             }
 
             PaymentResult<List<PaymentPurchaseResult>> result =
-                await _purchaseFlowService.PurchaseAsync(_playerId, productKey);
+                await _purchaseFlowService.PurchaseAsync(_settings.PlayerId, productKey);
 
             if (result.Success)
             {
@@ -285,7 +282,7 @@ namespace GamePaymentSDK.Direct
             }
 
             PaymentResult<List<PaymentPurchaseResult>> result =
-                await _paymentClaimService.ClaimLocalPendingOrdersAsync(_playerId);
+                await _paymentClaimService.ClaimLocalPendingOrdersAsync(_settings.PlayerId);
 
             if (result.Success)
             {
@@ -333,15 +330,15 @@ namespace GamePaymentSDK.Direct
 
         private PaymentResult ValidateBeforeInitialize()
         {
-            if (_configuration == null)
+            if (_settings == null)
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidConfiguration,
-                    "PaymentConfiguration is null."
+                    "PaymentSettings is null."
                 );
             }
 
-            if (!_configuration.IsValid(out string configError))
+            if (!_settings.IsValid(out string configError))
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidConfiguration,
@@ -349,11 +346,11 @@ namespace GamePaymentSDK.Direct
                 );
             }
 
-            if (string.IsNullOrWhiteSpace(_playerId))
+            if (string.IsNullOrWhiteSpace(_settings.PlayerId))
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidPlayerId,
-                    "playerId is required."
+                    "PlayerId is required."
                 );
             }
 

@@ -6,43 +6,39 @@ using UnityEngine;
 
 public sealed class PaymentBootstrap : MonoBehaviour
 {
-    [Header("Payment Config")]
-    [SerializeField] private string _baseUrl;
-    [SerializeField] private string _apiKey;
-    [SerializeField] private string _clientId;
-    [SerializeField] private string _playerId;
+    [Header("Payment Settings")]
+    [Tooltip("Payment data asset. If left empty, loads Resources/" + PaymentSettings.DefaultResourcePath + ".")]
+    [SerializeField] private PaymentSettings _settings;
 
     [Header("WebView")]
     [SerializeField] private MonoBehaviour _webViewServiceComponent;
-
-    [Header("Logging")]
-    [SerializeField] private bool _logEnabled = true;
-    [SerializeField] private LogType _logLevel = LogType.Log;
 
     private ILogger _logger;
 
     private async void Start()
     {
+        PaymentSettings settings = PaymentSettings.Resolve(_settings);
+
+        if (settings == null)
+        {
+            Debug.LogError(
+                "[PaymentBootstrap] PaymentSettings is missing. Assign one in the inspector " +
+                "or create it via Tools > Game Payment SDK > Create Payment Settings."
+            );
+            return;
+        }
+
+        if (!settings.IsValid(out string configError))
+        {
+            Debug.LogError($"[PaymentBootstrap] PaymentSettings is invalid: {configError}");
+            return;
+        }
+
         _logger = new Logger(Debug.unityLogger.logHandler)
         {
-            logEnabled = _logEnabled,
-            filterLogType = _logLevel
+            logEnabled = settings.LogEnabled,
+            filterLogType = settings.LogLevel
         };
-
-        PaymentConfiguration config = new()
-        {
-            BaseUrl = _baseUrl,
-            ApiKey = _apiKey,
-            Environment = PaymentEnvironment.Production,
-            RequestTimeoutSeconds = 20,
-            WebViewTimeoutSeconds = 300,
-            ClaimRetryCount = 3
-        };
-
-        GamePayment.Initialized += OnInitialized;
-        GamePayment.ProductsUpdated += OnProductsUpdated;
-        GamePayment.PurchaseSucceeded += OnPurchaseSucceeded;
-        GamePayment.PurchaseFailed += OnPurchaseFailed;
 
         if (_webViewServiceComponent is not IPaymentWebViewService webViewService)
         {
@@ -52,13 +48,13 @@ public sealed class PaymentBootstrap : MonoBehaviour
 
         webViewService.Logger = _logger;
 
+        GamePayment.Initialized += OnInitialized;
+        GamePayment.ProductsUpdated += OnProductsUpdated;
+        GamePayment.PurchaseSucceeded += OnPurchaseSucceeded;
+        GamePayment.PurchaseFailed += OnPurchaseFailed;
+
         PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
-            await GamePayment.InitializeAsync(
-                config,
-                _playerId,
-                webViewService,
-                _logger
-            );
+            await GamePayment.InitializeAsync(settings, webViewService, _logger);
 
         if (!result.Success)
         {
@@ -86,8 +82,6 @@ public sealed class PaymentBootstrap : MonoBehaviour
         _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentBootstrap] Purchase succeeded. product={result.ProductKey}, order={result.OrderId}");
 
         // Grant reward here.
-        // Example:
-        // RewardManager.Grant(result.ProductKey);
     }
 
     private void OnPurchaseFailed(PaymentPurchaseFailedEventArgs args)

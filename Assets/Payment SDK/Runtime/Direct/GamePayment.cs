@@ -1,6 +1,7 @@
 using GamePaymentSDK.Core;
 using GamePaymentSDK.WebView;
 using System;
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -33,8 +34,7 @@ namespace GamePaymentSDK.Direct
             _controller?.PlayerId;
 
         public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(
-            PaymentConfiguration configuration,
-            string playerId,
+            PaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
@@ -43,8 +43,7 @@ namespace GamePaymentSDK.Direct
             _logger = logger;
 
             _controller = new GamePaymentController(
-                configuration,
-                playerId,
+                settings,
                 webViewService,
                 logger
             );

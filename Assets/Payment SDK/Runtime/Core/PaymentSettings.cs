@@ -3,15 +3,9 @@ using UnityEngine;
 namespace GamePaymentSDK.Core
 {
     /// <summary>
-    /// Designer-facing payment configuration stored as a ScriptableObject asset.
-    ///
-    /// Holds DATA only (server, identity, timeouts). Scene/component references
-    /// (WebView services, UI) are intentionally NOT stored here: a ScriptableObject
-    /// asset cannot serialize references to scene objects, so those stay on the
-    /// MonoBehaviour bootstrap.
-    ///
-    /// Call <see cref="ToConfiguration"/> to get the runtime <see cref="PaymentConfiguration"/>
-    /// so the SDK core stays dependent on PaymentConfiguration, not on this asset.
+    /// Payment configuration asset. Holds all runtime settings (server, identity, timeouts,
+    /// logging). Scene/component references (WebView services, UI) are intentionally NOT
+    /// stored here — those stay on the MonoBehaviour bootstrap.
     /// </summary>
     [CreateAssetMenu(
         fileName = "PaymentSettings",
@@ -53,23 +47,38 @@ namespace GamePaymentSDK.Core
         public string ApiKey => _apiKey;
         public string PlayerId => _playerId;
         public PaymentEnvironment Environment => _environment;
+        public int RequestTimeoutSeconds => _requestTimeoutSeconds;
+        public int WebViewTimeoutSeconds => _webViewTimeoutSeconds;
+        public int ClaimRetryCount => _claimRetryCount;
+        public int PendingOrderCleanupDays => _pendingOrderCleanupDays;
+        public int ProcessedTransactionHistoryDays => _processedTransactionHistoryDays;
         public bool LogEnabled => _logEnabled;
         public LogType LogLevel => _logLevel;
 
-        /// <summary>Builds the runtime configuration consumed by the SDK.</summary>
-        public PaymentConfiguration ToConfiguration()
+        public bool IsValid(out string error)
         {
-            return new PaymentConfiguration
+            if (string.IsNullOrWhiteSpace(_baseUrl))
             {
-                BaseUrl = _baseUrl,
-                ApiKey = _apiKey,
-                Environment = _environment,
-                RequestTimeoutSeconds = _requestTimeoutSeconds,
-                WebViewTimeoutSeconds = _webViewTimeoutSeconds,
-                ClaimRetryCount = _claimRetryCount,
-                PendingOrderCleanupDays = _pendingOrderCleanupDays,
-                ProcessedTransactionHistoryDays = _processedTransactionHistoryDays
-            };
+                error = "BaseUrl is required.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(_apiKey))
+            {
+                error = "ApiKey is required.";
+                return false;
+            }
+
+            error = null;
+            return true;
+        }
+
+        public string GetNormalizedBaseUrl()
+        {
+            if (string.IsNullOrWhiteSpace(_baseUrl))
+                return string.Empty;
+
+            return _baseUrl.TrimEnd('/');
         }
 
         /// <summary>

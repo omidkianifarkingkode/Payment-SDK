@@ -11,7 +11,7 @@ namespace GamePaymentSDK.WebView.Mock
         public event Action ClosedByUser;
         public event Action<string> LoadFailed;
 
-        [SerializeField] private PaymentConfiguration _configuration;
+        [SerializeField] private PaymentSettings _settings;
         [SerializeField] private bool _autoComplete = true;
         [SerializeField] private bool _autoSuccess = true;
         [SerializeField] private float _autoCompleteDelaySeconds = 2f;
@@ -21,9 +21,9 @@ namespace GamePaymentSDK.WebView.Mock
 
         public ILogger Logger { get; set; }
 
-        public void SetConfiguration(PaymentConfiguration configuration)
+        public void SetSettings(PaymentSettings settings)
         {
-            _configuration = configuration;
+            _settings = settings;
         }
 
         public void Open(string url)
@@ -102,8 +102,8 @@ namespace GamePaymentSDK.WebView.Mock
 
         private string BuildCallbackUrl(string status)
         {
-            string baseUrl = _configuration != null
-                ? _configuration.GetNormalizedBaseUrl()
+            string baseUrl = _settings != null
+                ? _settings.GetNormalizedBaseUrl()
                 : "https://mock-payment.local";
 
             string authority = ExtractMockAuthority(_lastOpenedUrl);

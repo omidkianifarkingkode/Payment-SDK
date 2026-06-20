@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Reflection;
 using GamePaymentSDK.Core;
 using GamePaymentSDK.Services;
 using GamePaymentSDK.Tests.EditMode.Fakes;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace GamePaymentSDK.Tests.EditMode
 {
@@ -18,7 +20,7 @@ namespace GamePaymentSDK.Tests.EditMode
         private const string OrderId = "ZPR_1";
         private const string ProductKey = "gem_small";
 
-        private PaymentConfiguration _config;
+        private PaymentSettings _settings;
         private FakePaymentRequestService _requestService;
         private FakePaymentClaimService _claimService;
         private FakeWebViewService _webView;
@@ -27,12 +29,10 @@ namespace GamePaymentSDK.Tests.EditMode
         [SetUp]
         public void SetUp()
         {
-            _config = new PaymentConfiguration
-            {
-                BaseUrl = "https://api.example.com",
-                ApiKey = "key",
-                WebViewTimeoutSeconds = 300
-            };
+            _settings = ScriptableObject.CreateInstance<PaymentSettings>();
+            SetField(_settings, "_baseUrl", "https://api.example.com");
+            SetField(_settings, "_apiKey", "key");
+            SetField(_settings, "_webViewTimeoutSeconds", 300);
 
             _requestService = new FakePaymentRequestService
             {
@@ -47,19 +47,34 @@ namespace GamePaymentSDK.Tests.EditMode
 
             _claimService = new FakePaymentClaimService();
             _webView = new FakeWebViewService();
-            _parser = new PaymentCallbackParser(_config, UnityEngine.Debug.unityLogger);
+            _parser = new PaymentCallbackParser(UnityEngine.Debug.unityLogger);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_settings);
         }
 
         private PaymentPurchaseFlowService CreateFlow()
         {
             return new PaymentPurchaseFlowService(
-                _config,
+                _settings,
                 _requestService,
                 _claimService,
                 _webView,
                 _parser,
                 UnityEngine.Debug.unityLogger
             );
+        }
+
+        private static void SetField(object target, string fieldName, object value)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found.");
+            field.SetValue(target, value);
         }
 
         private static string CallbackUrl(string status)
@@ -194,7 +209,7 @@ namespace GamePaymentSDK.Tests.EditMode
         public void Purchase_NullWebViewDependency_FailsWithInvalidConfiguration()
         {
             PaymentPurchaseFlowService flow = new PaymentPurchaseFlowService(
-                _config,
+                _settings,
                 _requestService,
                 _claimService,
                 null,

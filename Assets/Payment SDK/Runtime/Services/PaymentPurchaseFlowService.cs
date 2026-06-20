@@ -42,7 +42,7 @@ namespace GamePaymentSDK.Services
 {
     public sealed class PaymentPurchaseFlowService : IPaymentPurchaseFlowService
     {
-        private readonly PaymentConfiguration _configuration;
+        private readonly PaymentSettings _configuration;
         private readonly IPaymentRequestService _paymentRequestService;
         private readonly IPaymentClaimService _paymentClaimService;
         private readonly IPaymentWebViewService _webViewService;
@@ -54,7 +54,7 @@ namespace GamePaymentSDK.Services
             _paymentRequestService.IsPurchaseInProgress;
 
         public PaymentPurchaseFlowService(
-            PaymentConfiguration configuration,
+            PaymentSettings configuration,
             IPaymentRequestService paymentRequestService,
             IPaymentClaimService paymentClaimService,
             IPaymentWebViewService webViewService,
@@ -358,7 +358,7 @@ namespace GamePaymentSDK.Services
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidConfiguration,
-                    "PaymentConfiguration is null."
+                    "PaymentSettings is null."
                 );
             }
 

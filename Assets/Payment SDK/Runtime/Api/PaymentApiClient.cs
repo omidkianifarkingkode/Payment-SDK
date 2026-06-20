@@ -15,13 +15,13 @@ namespace GamePaymentSDK.Api
         private const string HeaderAccept = "Accept";
         private const string JsonContentType = "application/json";
 
-        private readonly PaymentConfiguration _configuration;
+        private readonly PaymentSettings _configuration;
         private readonly ILogger _logger;
         private readonly string _baseUrl;
         private readonly bool _isValid;
         private readonly string _configError;
 
-        public PaymentApiClient(PaymentConfiguration configuration, ILogger logger)
+        public PaymentApiClient(PaymentSettings configuration, ILogger logger)
         {
             _configuration = configuration;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace GamePaymentSDK.Api
             if (_configuration == null)
             {
                 _isValid = false;
-                _configError = "PaymentConfiguration is null.";
+                _configError = "PaymentSettings is null.";
                 _baseUrl = string.Empty;
                 return;
             }

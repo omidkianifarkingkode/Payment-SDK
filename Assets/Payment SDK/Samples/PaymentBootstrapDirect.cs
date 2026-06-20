@@ -24,7 +24,6 @@ namespace GamePaymentSDK.Samples
         [SerializeField] private PaymentProductListUI _productListUI;
         [SerializeField] private PaymentRewardGrantExample _rewardGrant;
 
-        private PaymentConfiguration _configuration;
         private ILogger _logger;
 
         private async void Start()
@@ -40,21 +39,19 @@ namespace GamePaymentSDK.Samples
                 return;
             }
 
+            if (!settings.IsValid(out string configError))
+            {
+                Debug.LogError($"[PaymentBootstrapDirect] PaymentSettings is invalid: {configError}");
+                return;
+            }
+
             _logger = new Logger(Debug.unityLogger.logHandler)
             {
                 logEnabled = settings.LogEnabled,
                 filterLogType = settings.LogLevel
             };
 
-            _configuration = settings.ToConfiguration();
-
-            if (!_configuration.IsValid(out string configError))
-            {
-                Debug.LogError($"[PaymentBootstrapDirect] PaymentSettings is invalid: {configError}");
-                return;
-            }
-
-            IPaymentWebViewService webViewService = ResolveWebViewService();
+            IPaymentWebViewService webViewService = ResolveWebViewService(settings);
 
             if (webViewService == null)
             {
@@ -70,12 +67,7 @@ namespace GamePaymentSDK.Samples
             GamePayment.PurchaseFailed += HandlePurchaseFailed;
 
             PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
-                await GamePayment.InitializeAsync(
-                    _configuration,
-                    settings.PlayerId,
-                    webViewService,
-                    _logger
-                );
+                await GamePayment.InitializeAsync(settings, webViewService, _logger);
 
             if (!result.Success)
             {
@@ -123,12 +115,12 @@ namespace GamePaymentSDK.Samples
             }
         }
 
-        private IPaymentWebViewService ResolveWebViewService()
+        private IPaymentWebViewService ResolveWebViewService(PaymentSettings settings)
         {
 #if UNITY_EDITOR
             if (_mockWebViewService != null)
             {
-                _mockWebViewService.SetConfiguration(_configuration);
+                _mockWebViewService.SetSettings(settings);
                 _mockWebViewService.Logger = _logger;
                 return _mockWebViewService;
             }

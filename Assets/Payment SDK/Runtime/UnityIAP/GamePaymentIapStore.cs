@@ -14,8 +14,7 @@ namespace GamePaymentSDK.UnityIAP
 {
     public sealed class GamePaymentIapStore : IStore, IDisposable
     {
-        private readonly PaymentConfiguration _configuration;
-        private readonly string _playerId;
+        private readonly PaymentSettings _settings;
         private readonly IPaymentWebViewService _webViewService;
         private readonly ILogger _logger;
         private IStoreCallback _callback;
@@ -25,13 +24,11 @@ namespace GamePaymentSDK.UnityIAP
         private bool _isRetrievingProducts;
 
         public GamePaymentIapStore(
-            PaymentConfiguration configuration,
-            string playerId,
+            PaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
-            _configuration = configuration;
-            _playerId = playerId;
+            _settings = settings;
             _webViewService = webViewService;
             _logger = logger;
         }
@@ -247,8 +244,7 @@ namespace GamePaymentSDK.UnityIAP
                 return;
 
             _controller = new GamePaymentController(
-                _configuration,
-                _playerId,
+                _settings,
                 _webViewService,
                 _logger
             );
@@ -259,15 +255,15 @@ namespace GamePaymentSDK.UnityIAP
 
         private PaymentResult ValidateDependencies()
         {
-            if (_configuration == null)
+            if (_settings == null)
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidConfiguration,
-                    "PaymentConfiguration is null."
+                    "PaymentSettings is null."
                 );
             }
 
-            if (!_configuration.IsValid(out string configError))
+            if (!_settings.IsValid(out string configError))
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidConfiguration,
@@ -275,11 +271,11 @@ namespace GamePaymentSDK.UnityIAP
                 );
             }
 
-            if (string.IsNullOrWhiteSpace(_playerId))
+            if (string.IsNullOrWhiteSpace(_settings.PlayerId))
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidPlayerId,
-                    "playerId is required."
+                    "PlayerId is required."
                 );
             }
 

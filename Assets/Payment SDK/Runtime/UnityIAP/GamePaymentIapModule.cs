@@ -8,47 +8,33 @@ namespace GamePaymentSDK.UnityIAP
 {
     public sealed class GamePaymentIapModule : AbstractPurchasingModule
     {
-        private readonly PaymentConfiguration _configuration;
-        private readonly string _playerId;
+        private readonly PaymentSettings _settings;
         private readonly IPaymentWebViewService _webViewService;
         private readonly ILogger _logger;
 
         private GamePaymentIapModule(
-            PaymentConfiguration configuration,
-            string playerId,
+            PaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
-            _configuration = configuration;
-            _playerId = playerId;
+            _settings = settings;
             _webViewService = webViewService;
             _logger = logger;
         }
 
         public static GamePaymentIapModule Instance(
-            PaymentConfiguration configuration,
-            string playerId,
+            PaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {
-            return new GamePaymentIapModule(
-                configuration,
-                playerId,
-                webViewService,
-                logger
-            );
+            return new GamePaymentIapModule(settings, webViewService, logger);
         }
 
         public override void Configure()
         {
             RegisterStore(
                 GamePaymentIapStoreConstants.StoreName,
-                new GamePaymentIapStore(
-                    _configuration,
-                    _playerId,
-                    _webViewService,
-                    _logger
-                )
+                new GamePaymentIapStore(_settings, _webViewService, _logger)
             );
         }
     }

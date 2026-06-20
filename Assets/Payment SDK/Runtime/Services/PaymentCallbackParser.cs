@@ -1,23 +1,18 @@
 using System;
 using System.Collections.Generic;
-using GamePaymentSDK.Core;
 using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
     public sealed class PaymentCallbackParser : IPaymentCallbackParser
     {
-        private readonly PaymentConfiguration _configuration;
         private readonly ILogger _logger;
         private readonly string _expectedCallbackPath;
 
-        public PaymentCallbackParser(PaymentConfiguration configuration, ILogger logger)
+        public PaymentCallbackParser(ILogger logger)
         {
-            _configuration = configuration;
             _logger = logger;
-
             _expectedCallbackPath = "/v1/payments/callback/";
-
         }
 
         public PaymentCallbackResult Parse(string url)
