@@ -36,34 +36,37 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using GamePaymentSDK.Core;
 using GamePaymentSDK.WebView;
+using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
     public sealed class PaymentPurchaseFlowService : IPaymentPurchaseFlowService
     {
-        private readonly PaymentConfiguration _configuration;
+        private readonly PaymentSettings _configuration;
         private readonly IPaymentRequestService _paymentRequestService;
         private readonly IPaymentClaimService _paymentClaimService;
         private readonly IPaymentWebViewService _webViewService;
         private readonly IPaymentCallbackParser _callbackParser;
+        private readonly ILogger _logger;
 
         public bool IsPurchaseInProgress =>
             _paymentRequestService != null &&
             _paymentRequestService.IsPurchaseInProgress;
 
         public PaymentPurchaseFlowService(
-            PaymentConfiguration configuration,
+            PaymentSettings configuration,
             IPaymentRequestService paymentRequestService,
             IPaymentClaimService paymentClaimService,
             IPaymentWebViewService webViewService,
-            IPaymentCallbackParser callbackParser
-        )
+            IPaymentCallbackParser callbackParser,
+            ILogger logger)
         {
             _configuration = configuration;
             _paymentRequestService = paymentRequestService;
             _paymentClaimService = paymentClaimService;
             _webViewService = webViewService;
             _callbackParser = callbackParser;
+            _logger = logger;
         }
 
         public async Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(string playerId, string productKey)
@@ -78,7 +81,7 @@ namespace GamePaymentSDK.Services
                 );
             }
 
-            PaymentLogger.Log($"Purchase flow started. playerId={playerId}, productKey={productKey}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentPurchaseFlowService] Purchase flow started. playerId={playerId}, productKey={productKey}");
 
             PaymentResult<PaymentStartResult> startResult =
                 await _paymentRequestService.RequestPaymentAsync(playerId, productKey);
@@ -103,15 +106,11 @@ namespace GamePaymentSDK.Services
 
             if (finalResult.Success)
             {
-                PaymentLogger.Log(
-                    $"Purchase flow succeeded. orderId={paymentStart.OrderId}, productKey={paymentStart.ProductKey}, count={finalResult.Data.Count}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentPurchaseFlowService] Purchase flow succeeded. orderId={paymentStart.OrderId}, productKey={paymentStart.ProductKey}, count={finalResult.Data.Count}");
             }
             else
             {
-                PaymentLogger.LogWarning(
-                    $"Purchase flow failed. orderId={paymentStart.OrderId}, productKey={paymentStart.ProductKey}, reason={finalResult.FailureReason}, error={finalResult.ErrorMessage}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentPurchaseFlowService] Purchase flow failed. orderId={paymentStart.OrderId}, productKey={paymentStart.ProductKey}, reason={finalResult.FailureReason}, error={finalResult.ErrorMessage}");
             }
 
             return finalResult;
@@ -128,9 +127,7 @@ namespace GamePaymentSDK.Services
                 if (!callback.IsPaymentCallback)
                     return;
 
-                PaymentLogger.Log(
-                    $"Payment callback detected. orderId={paymentStart.OrderId}, status={callback.StatusRaw}, authority={callback.Authority}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentPurchaseFlowService] Payment callback detected. orderId={paymentStart.OrderId}, status={callback.StatusRaw}, authority={callback.Authority}");
 
                 completion.TrySetResult(new PaymentWebViewFlowResult
                 {
@@ -361,7 +358,7 @@ namespace GamePaymentSDK.Services
             {
                 return PaymentResult.Fail(
                     PaymentFailureReason.InvalidConfiguration,
-                    "PaymentConfiguration is null."
+                    "PaymentSettings is null."
                 );
             }
 
@@ -416,7 +413,7 @@ namespace GamePaymentSDK.Services
             }
             catch (Exception exception)
             {
-                PaymentLogger.LogWarning($"Failed to close WebView. {exception.Message}");
+                _logger.Log(LogType.Warning, $"[PaymentSdk] [PaymentPurchaseFlowService] Failed to close WebView. {exception.Message}");
             }
         }
     }

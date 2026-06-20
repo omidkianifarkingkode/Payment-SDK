@@ -1,5 +1,4 @@
 using System;
-using GamePaymentSDK.Core;
 using UnityEngine;
 
 namespace GamePaymentSDK.WebView.UniWebViewAdapter
@@ -18,6 +17,8 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
 
         public bool IsOpen => _isOpen;
 
+        public ILogger Logger { get; set; }
+
         public void Open(string url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -30,7 +31,7 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
             _isOpen = true;
             _isClosingBySdk = false;
 
-            PaymentLogger.Log($"Opening UniWebView payment URL: {url}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [UniWebViewPaymentService] Opening UniWebView payment URL: {url}");
 
             _webView.Load(url);
 
@@ -146,23 +147,23 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
 
         private void HandlePageProgressChanged(UniWebView webView, float progress)
         {
-            PaymentLogger.Log($"UniWebView page progress: {progress * 100f}%");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [UniWebViewPaymentService] UniWebView page progress: {progress * 100f}%");
         }
 
         private void HandleMessageReceived(UniWebView webView, UniWebViewMessage message)
         {
-            PaymentLogger.Log($"UniWebView message received: {message}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [UniWebViewPaymentService] UniWebView message received: {message}");
         }
 
         private void HandlePageStarted(UniWebView webView, string url)
         {
-            PaymentLogger.Log($"UniWebView page started: {url}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [UniWebViewPaymentService] UniWebView page started: {url}");
             UrlChanged?.Invoke(url);
         }
 
         private void HandlePageFinished(UniWebView webView, int statusCode, string url)
         {
-            PaymentLogger.Log($"UniWebView page finished: status={statusCode}, url={url}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [UniWebViewPaymentService] UniWebView page finished: status={statusCode}, url={url}");
             UrlChanged?.Invoke(url);
         }
 
@@ -186,17 +187,17 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
             }
 
             string message = string.IsNullOrWhiteSpace(failingUrl)
-                ? $"UniWebView loading error. code={errorCode}, message={errorMessage}"
-                : $"UniWebView loading error. code={errorCode}, message={errorMessage}, url={failingUrl}";
+                ? $"[PaymentSdk] [UniWebViewPaymentService] UniWebView loading error. code={errorCode}, message={errorMessage}"
+                : $"[PaymentSdk] [UniWebViewPaymentService] UniWebView loading error. code={errorCode}, message={errorMessage}, url={failingUrl}";
 
-            PaymentLogger.LogWarning(message);
+            Logger.Log(LogType.Warning, message);
 
             LoadFailed?.Invoke(message);
         }
 
         private bool HandleShouldClose(UniWebView webView)
         {
-            PaymentLogger.Log("UniWebView requested close.");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [UniWebViewPaymentService] UniWebView requested close.");
 
             bool wasClosedBySdk = _isClosingBySdk;
 
@@ -216,8 +217,8 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
 
         private void HandleWebContentProcessTerminated(UniWebView webView)
         {
-            string message = "UniWebView web content process terminated.";
-            PaymentLogger.LogWarning(message);
+            string message = "[PaymentSdk] [UniWebViewPaymentService] UniWebView web content process terminated.";
+            Logger.Log(LogType.Warning, message);
             LoadFailed?.Invoke(message);
             CloseInternal(raiseClosedByUser: false);
         }

@@ -1,5 +1,6 @@
 using System;
 using GamePaymentSDK.WebView;
+using UnityEngine;
 
 namespace GamePaymentSDK.Tests.EditMode.Fakes
 {
@@ -21,6 +22,8 @@ namespace GamePaymentSDK.Tests.EditMode.Fakes
 
         public int OpenCallCount { get; private set; }
         public int CloseCallCount { get; private set; }
+
+        public ILogger Logger { get; set; }
 
         public void Open(string url)
         {

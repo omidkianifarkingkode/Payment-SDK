@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using GamePaymentSDK.Api;
 using GamePaymentSDK.Core;
 using GamePaymentSDK.Storage;
+using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
@@ -10,11 +11,13 @@ namespace GamePaymentSDK.Services
     {
         private readonly IPaymentApiClient _apiClient;
         private readonly IPendingOrderStorage _pendingOrderStorage;
+        private readonly ILogger _logger;
 
-        public PaymentClaimService(IPaymentApiClient apiClient, IPendingOrderStorage pendingOrderStorage)
+        public PaymentClaimService(IPaymentApiClient apiClient, IPendingOrderStorage pendingOrderStorage, ILogger logger)
         {
             _apiClient = apiClient;
             _pendingOrderStorage = pendingOrderStorage ?? throw new System.ArgumentNullException(nameof(pendingOrderStorage));
+            _logger = logger;
         }
 
         public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimOrderAsync(string playerId, string orderId)
@@ -37,7 +40,7 @@ namespace GamePaymentSDK.Services
 
             MarkOrderAsClaimPending(orderId);
 
-            PaymentLogger.Log($"Claim specific order started. orderId={orderId}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] Claim specific order started. orderId={orderId}");
 
             PaymentResult<List<ClaimItemDto>> claimResult =
                 await _apiClient.ClaimAsync(playerId, orderId);
@@ -46,9 +49,7 @@ namespace GamePaymentSDK.Services
             {
                 RegisterClaimFailure(orderId);
 
-                PaymentLogger.LogWarning(
-                    $"Claim specific order failed. orderId={orderId}, reason={claimResult.FailureReason}, error={claimResult.ErrorMessage}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentClaimService] Claim specific order failed. orderId={orderId}, reason={claimResult.FailureReason}, error={claimResult.ErrorMessage}");
 
                 return PaymentResult<List<PaymentPurchaseResult>>.Fail(
                     claimResult.FailureReason,
@@ -61,9 +62,7 @@ namespace GamePaymentSDK.Services
 
             RemoveClaimedOrdersFromStorage(purchases);
 
-            PaymentLogger.Log(
-                $"Claim specific order completed. orderId={orderId}, claimedCount={purchases.Count}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] Claim specific order completed. orderId={orderId}, claimedCount={purchases.Count}");
 
             return PaymentResult<List<PaymentPurchaseResult>>.Ok(purchases);
         }
@@ -78,7 +77,7 @@ namespace GamePaymentSDK.Services
                 );
             }
 
-            PaymentLogger.Log($"Claim all for player started. playerId={playerId}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] Claim all for player started. playerId={playerId}");
 
             PaymentResult<List<ClaimItemDto>> claimResult =
                 await _apiClient.ClaimAsync(playerId, null);
@@ -87,9 +86,7 @@ namespace GamePaymentSDK.Services
             {
                 RegisterAllLocalClaimFailures();
 
-                PaymentLogger.LogWarning(
-                    $"Claim all for player failed. playerId={playerId}, reason={claimResult.FailureReason}, error={claimResult.ErrorMessage}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentClaimService] Claim all for player failed. playerId={playerId}, reason={claimResult.FailureReason}, error={claimResult.ErrorMessage}");
 
                 return PaymentResult<List<PaymentPurchaseResult>>.Fail(
                     claimResult.FailureReason,
@@ -102,9 +99,7 @@ namespace GamePaymentSDK.Services
 
             RemoveClaimedOrdersFromStorage(purchases);
 
-            PaymentLogger.Log(
-                $"Claim all for player completed. playerId={playerId}, claimedCount={purchases.Count}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] Claim all for player completed. playerId={playerId}, claimedCount={purchases.Count}");
 
             return PaymentResult<List<PaymentPurchaseResult>>.Ok(purchases);
         }
@@ -121,9 +116,7 @@ namespace GamePaymentSDK.Services
 
             List<PendingOrder> localPendingOrders = _pendingOrderStorage.GetAll();
 
-            PaymentLogger.Log(
-                $"Claim local pending orders started. localPendingCount={localPendingOrders.Count}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] Claim local pending orders started. localPendingCount={localPendingOrders.Count}");
 
             /*
              * Important:
@@ -145,9 +138,7 @@ namespace GamePaymentSDK.Services
             if (!result.Success)
                 return result;
 
-            PaymentLogger.Log(
-                $"Claim local pending orders completed. claimedCount={result.Data.Count}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] Claim local pending orders completed. claimedCount={result.Data.Count}");
 
             return result;
         }
@@ -176,7 +167,7 @@ namespace GamePaymentSDK.Services
                     playerId
                 );
 
-                PaymentPurchaseResult purchase = new PaymentPurchaseResult
+                PaymentPurchaseResult purchase = new()
                 {
                     OrderId = item.orderId,
                     ProductKey = item.productKey,
