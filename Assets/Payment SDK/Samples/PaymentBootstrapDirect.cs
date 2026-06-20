@@ -20,10 +20,6 @@ namespace GamePaymentSDK.Samples
         [Tooltip("Assign MockPaymentWebViewService here for Editor testing.")]
         [SerializeField] private MockPaymentWebViewService _mockWebViewService;
 
-        [Header("Logging")]
-        [SerializeField] private bool _logEnabled = true;
-        [SerializeField] private LogType _logLevel = LogType.Log;
-
         [Header("UI")]
         [SerializeField] private PaymentProductListUI _productListUI;
         [SerializeField] private PaymentRewardGrantExample _rewardGrant;
@@ -33,12 +29,6 @@ namespace GamePaymentSDK.Samples
 
         private async void Start()
         {
-            _logger = new Logger(Debug.unityLogger.logHandler)
-            {
-                logEnabled = _logEnabled,
-                filterLogType = _logLevel
-            };
-
             PaymentSettings settings = PaymentSettings.Resolve(_settings);
 
             if (settings == null)
@@ -49,6 +39,12 @@ namespace GamePaymentSDK.Samples
                 );
                 return;
             }
+
+            _logger = new Logger(Debug.unityLogger.logHandler)
+            {
+                logEnabled = settings.LogEnabled,
+                filterLogType = settings.LogLevel
+            };
 
             _configuration = settings.ToConfiguration();
 

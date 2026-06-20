@@ -46,12 +46,15 @@ namespace GamePaymentSDK.Core
         [Min(0)] [SerializeField] private int _processedTransactionHistoryDays = 90;
 
         [Header("Logging")]
-        [SerializeField] private bool _enableLogs = true;
+        [SerializeField] private bool _logEnabled = true;
+        [SerializeField] private LogType _logLevel = LogType.Log;
 
         public string BaseUrl => _baseUrl;
         public string ApiKey => _apiKey;
         public string PlayerId => _playerId;
         public PaymentEnvironment Environment => _environment;
+        public bool LogEnabled => _logEnabled;
+        public LogType LogLevel => _logLevel;
 
         /// <summary>Builds the runtime configuration consumed by the SDK.</summary>
         public PaymentConfiguration ToConfiguration()
@@ -65,8 +68,7 @@ namespace GamePaymentSDK.Core
                 WebViewTimeoutSeconds = _webViewTimeoutSeconds,
                 ClaimRetryCount = _claimRetryCount,
                 PendingOrderCleanupDays = _pendingOrderCleanupDays,
-                ProcessedTransactionHistoryDays = _processedTransactionHistoryDays,
-                EnableLogs = _enableLogs
+                ProcessedTransactionHistoryDays = _processedTransactionHistoryDays
             };
         }
 

@@ -22,7 +22,7 @@ namespace GamePaymentSDK.EditorTools
         private SerializedProperty _baseUrl, _apiKey, _playerId, _environment;
         private SerializedProperty _requestTimeout, _webViewTimeout;
         private SerializedProperty _claimRetryCount, _pendingOrderCleanupDays, _processedTransactionHistoryDays;
-        private SerializedProperty _enableLogs;
+        private SerializedProperty _logEnabled, _logLevel;
 
         private bool _showApiKey;
 
@@ -37,7 +37,8 @@ namespace GamePaymentSDK.EditorTools
             _claimRetryCount = serializedObject.FindProperty("_claimRetryCount");
             _pendingOrderCleanupDays = serializedObject.FindProperty("_pendingOrderCleanupDays");
             _processedTransactionHistoryDays = serializedObject.FindProperty("_processedTransactionHistoryDays");
-            _enableLogs = serializedObject.FindProperty("_enableLogs");
+            _logEnabled = serializedObject.FindProperty("_logEnabled");
+            _logLevel = serializedObject.FindProperty("_logLevel");
         }
 
         public override void OnInspectorGUI()
@@ -77,7 +78,9 @@ namespace GamePaymentSDK.EditorTools
 
             Card("Logging", Accent, () =>
             {
-                EditorGUILayout.PropertyField(_enableLogs, new GUIContent("Enable Logs"));
+                EditorGUILayout.PropertyField(_logEnabled, new GUIContent("Enable Logs"));
+                using (new EditorGUI.DisabledScope(!_logEnabled.boolValue))
+                    EditorGUILayout.PropertyField(_logLevel, new GUIContent("Log Level"));
             });
 
             EditorGUILayout.Space(6);
