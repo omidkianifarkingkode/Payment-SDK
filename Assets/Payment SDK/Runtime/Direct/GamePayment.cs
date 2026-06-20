@@ -67,9 +67,7 @@ namespace GamePaymentSDK.Direct
             return _controller.TryGetProduct(productKey, out product);
         }
 
-        public static Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(
-            string productKey
-        )
+        public static Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(string productKey)
         {
             if (_controller == null)
             {
@@ -144,9 +142,7 @@ namespace GamePaymentSDK.Direct
             Initialized?.Invoke(args);
         }
 
-        private static void OnControllerProductsUpdated(
-            IReadOnlyCollection<PaymentProduct> products
-        )
+        private static void OnControllerProductsUpdated(IReadOnlyCollection<PaymentProduct> products)
         {
             ProductsUpdated?.Invoke(products);
         }

@@ -1,4 +1,4 @@
-using System;
+    using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using GamePaymentSDK.Core;
@@ -17,7 +17,18 @@ namespace GamePaymentSDK.Direct
         bool IsPurchaseInProgress { get; }
 
         string PlayerId { get; }
-
+        
+        /// <summary>
+        /// Initialization Behavior:
+        /// 1. Validate config/playerId.
+        /// 2. GET /v1/products.
+        /// 3. Store products in RAM.
+        /// 4. Raise ProductsUpdated.
+        /// 5. Raise Initialized(success).
+        /// 6. Call pending claim recovery.
+        /// 7. Raise PurchaseSucceeded for recovered purchases.
+        /// </summary>
+        /// <returns></returns>
         Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync();
 
         IReadOnlyCollection<PaymentProduct> GetProducts();

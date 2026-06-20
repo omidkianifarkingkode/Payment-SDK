@@ -1,4 +1,5 @@
 /// Behaviors:
+/// 
 /// # Success path:
 /// 1. PurchaseAsync(productKey)
 /// 2. POST /v1/payments/request
@@ -7,20 +8,24 @@
 /// 5. Detect callback status=OK
 /// 6. POST /v1/payments/claim
 /// 7. Return PaymentPurchaseResult
+/// 
 /// # User closes WebView:
 /// 1. WebView closed by user
 /// 2. SDK tries ClaimOrderAsync once
 /// 3. If claim returns purchase: success
 /// 4. Else: return WebViewClosedByUser and keep local pending order
 /// This protects the case where:
-/// - User paid successfully but closed WebView before Unity detected callback
+///  - User paid successfully but closed WebView before Unity detected callback
+/// 
 /// # Timeout or WebView load failure
 /// 1. SDK tries ClaimOrderAsync once
 /// 2. If claim succeeds: the purchase still succeed
 /// 3. If claim fails: the order remains locally pending for future recovery.
+/// 
 /// # Callback NOK
 /// 1. SDK returns: PaymentCancelled
 /// 2. Marks the local pending order as: Failed
+///
 /// # Callback OK but claim returns empty (Backend has not returned a claimable purchase yet)
 /// 1. SDK returns: PaymentNotVerified
 /// 2. Keeps the pending order locally
@@ -61,10 +66,7 @@ namespace GamePaymentSDK.Services
             _callbackParser = callbackParser;
         }
 
-        public async Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(
-            string playerId,
-            string productKey
-        )
+        public async Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(string playerId, string productKey)
         {
             PaymentResult validation = ValidateDependencies();
 
@@ -115,9 +117,7 @@ namespace GamePaymentSDK.Services
             return finalResult;
         }
 
-        private async Task<PaymentWebViewFlowResult> OpenPaymentWebViewAndWaitAsync(
-            PaymentStartResult paymentStart
-        )
+        private async Task<PaymentWebViewFlowResult> OpenPaymentWebViewAndWaitAsync(PaymentStartResult paymentStart)
         {
             TaskCompletionSource<PaymentWebViewFlowResult> completion = new();
 
@@ -210,10 +210,7 @@ namespace GamePaymentSDK.Services
             }
         }
 
-        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleWebViewResultAsync(
-            PaymentStartResult paymentStart,
-            PaymentWebViewFlowResult webViewResult
-        )
+        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleWebViewResultAsync(PaymentStartResult paymentStart, PaymentWebViewFlowResult webViewResult)
         {
             if (webViewResult == null)
             {
@@ -261,10 +258,7 @@ namespace GamePaymentSDK.Services
             }
         }
 
-        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleCallbackDetectedAsync(
-            PaymentStartResult paymentStart,
-            PaymentCallbackResult callback
-        )
+        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleCallbackDetectedAsync(PaymentStartResult paymentStart, PaymentCallbackResult callback)
         {
             if (callback == null || !callback.IsPaymentCallback)
             {
@@ -311,9 +305,7 @@ namespace GamePaymentSDK.Services
             return PaymentResult<List<PaymentPurchaseResult>>.Ok(claimResult.Data);
         }
 
-        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleWebViewClosedByUserAsync(
-            PaymentStartResult paymentStart
-        )
+        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleWebViewClosedByUserAsync(PaymentStartResult paymentStart)
         {
             /*
              * User may close the WebView after payment but before Unity detects the callback.
@@ -338,11 +330,7 @@ namespace GamePaymentSDK.Services
             );
         }
 
-        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleRecoverableWebViewFailureAsync(
-            PaymentStartResult paymentStart,
-            PaymentFailureReason fallbackReason,
-            string errorMessage
-        )
+        private async Task<PaymentResult<List<PaymentPurchaseResult>>> HandleRecoverableWebViewFailureAsync(PaymentStartResult paymentStart, PaymentFailureReason fallbackReason, string errorMessage)
         {
             /*
              * A load failure or timeout may happen after payment was completed.

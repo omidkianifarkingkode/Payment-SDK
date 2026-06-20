@@ -27,6 +27,7 @@ namespace GamePaymentSDK.WebView.Mock
         public void Open(string url)
         {
             _lastOpenedUrl = url;
+            Application.OpenURL(url);
 
             PaymentLogger.Log($"Mock WebView opened: {url}");
 
@@ -103,13 +104,13 @@ namespace GamePaymentSDK.WebView.Mock
                 ? _configuration.GetNormalizedBaseUrl()
                 : "https://mock-payment.local";
 
-            string clientId = _configuration != null
-                ? _configuration.ClientId
-                : "client_mock";
+            //string clientId = _configuration != null
+            //    ? _configuration.ClientId
+            //    : "client_mock";
 
             string authority = ExtractMockAuthority(_lastOpenedUrl);
 
-            return $"{baseUrl}/v1/payments/callback/{clientId}?authority={authority}&status={status}";
+            return $"{baseUrl}/v1/payments/callback/clientId?authority={authority}&status={status}";
         }
 
         private string ExtractMockAuthority(string url)

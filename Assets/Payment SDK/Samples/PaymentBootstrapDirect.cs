@@ -12,7 +12,6 @@ namespace GamePaymentSDK.Samples
         [Header("Payment Service")]
         [SerializeField] private string _baseUrl;
         [SerializeField] private string _apiKey;
-        [SerializeField] private string _clientId;
         [SerializeField] private string _playerId;
 
         [Header("WebView")]
@@ -34,7 +33,6 @@ namespace GamePaymentSDK.Samples
             {
                 BaseUrl = _baseUrl,
                 ApiKey = _apiKey,
-                ClientId = _clientId,
                 Environment = PaymentEnvironment.Production,
                 RequestTimeoutSeconds = 20,
                 WebViewTimeoutSeconds = 300,

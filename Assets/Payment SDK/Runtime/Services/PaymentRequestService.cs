@@ -1,4 +1,5 @@
 /// Important Behavior:
+/// 
 /// # Preventing double purchase flow
 /// If player taps purchase button many times:
 /// First tap: request starts
@@ -6,6 +7,7 @@
 /// This is important because for Phase 1, the safest rule is:
 /// Only one active purchase WebView session at a time.
 /// -----------------
+/// 
 /// # Storing pending order immediately
 /// As soon as backend creates the order:
 /// POST /v1/payments/request success
@@ -13,6 +15,7 @@
 /// orderId, playerId, productKey, paymentUrl, createdAt, status = PaymentUrlReceived
 /// So if the app crashes after getting paymentUrl, you still have recovery data.
 /// -----------------
+/// 
 /// # Not removing failed orders automatically
 /// When status becomes: Failed -> The order remains in local storage for now.
 /// Reason: During development and QA, keeping failed local records helps debugging.
@@ -39,21 +42,14 @@ namespace GamePaymentSDK.Services
         public bool IsPurchaseInProgress => _isPurchaseInProgress;
         public string ActiveOrderId => _activeOrderId;
 
-        public PaymentRequestService(
-            IPaymentApiClient apiClient,
-            IProductCatalogService productCatalogService,
-            IPendingOrderStorage pendingOrderStorage
-        )
+        public PaymentRequestService(IPaymentApiClient apiClient, IProductCatalogService productCatalogService, IPendingOrderStorage pendingOrderStorage)
         {
             _apiClient = apiClient;
             _productCatalogService = productCatalogService;
             _pendingOrderStorage = pendingOrderStorage;
         }
 
-        public async Task<PaymentResult<PaymentStartResult>> RequestPaymentAsync(
-            string playerId,
-            string productKey
-        )
+        public async Task<PaymentResult<PaymentStartResult>> RequestPaymentAsync(string playerId, string productKey)
         {
             PaymentResult validationResult = ValidateRequest(playerId, productKey);
 
@@ -98,7 +94,7 @@ namespace GamePaymentSDK.Services
 
             PaymentRequestResponseDto response = apiResult.Data;
 
-            PendingOrder pendingOrder = new PendingOrder
+            PendingOrder pendingOrder = new()
             {
                 OrderId = response.orderId,
                 PlayerId = playerId,
@@ -113,7 +109,7 @@ namespace GamePaymentSDK.Services
 
             _activeOrderId = response.orderId;
 
-            PaymentStartResult result = new PaymentStartResult
+            PaymentStartResult result = new()
             {
                 OrderId = response.orderId,
                 PlayerId = playerId,
