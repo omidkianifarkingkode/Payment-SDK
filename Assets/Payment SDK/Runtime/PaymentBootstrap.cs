@@ -11,8 +11,6 @@ public sealed class PaymentBootstrap : MonoBehaviour
 
     private PaymentSettings _settings;
     private ILogger _logger;
-    private IPaymentWebViewService _webViewService;
-    private bool _ready;
 
     private void Start()
     {
@@ -42,36 +40,12 @@ public sealed class PaymentBootstrap : MonoBehaviour
             return;
         }
 
-        _webViewService = webViewService;
-        _ready = true;
-    }
-
-    /// <summary>
-    /// Call this (e.g. via UnityEvent) once the player identity is known.
-    /// Triggers SDK initialization with the resolved player ID.
-    /// </summary>
-    public async void Initialize(string playerId)
-    {
-        if (!_ready)
-        {
-            Debug.LogError("[PaymentBootstrap] Cannot initialize: setup failed. Check earlier errors.");
-            return;
-        }
-
-        _webViewService.Logger = _logger;
-
         GamePayment.Initialized += OnInitialized;
         GamePayment.ProductsUpdated += OnProductsUpdated;
         GamePayment.PurchaseSucceeded += OnPurchaseSucceeded;
         GamePayment.PurchaseFailed += OnPurchaseFailed;
 
-        PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
-            await GamePayment.InitializeAsync(_settings, playerId, _webViewService, _logger);
-
-        if (!result.Success)
-        {
-            _logger.Log(LogType.Warning, $"[PaymentSdk] [PaymentBootstrap] Payment init failed: {result.FailureReason} / {result.ErrorMessage}");
-        }
+        GamePayment.Setup(_settings, webViewService, _logger);
     }
 
     public async void BuySmallGemPack()

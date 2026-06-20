@@ -29,9 +29,9 @@ namespace GamePaymentSDK.Samples
         private PaymentSettings _settings;
         private ILogger _logger;
         private IPaymentWebViewService _webViewService;
+
         private IStoreController _storeController;
         private IExtensionProvider _extensionProvider;
-        private bool _ready;
 
         private void Start()
         {
@@ -60,25 +60,20 @@ namespace GamePaymentSDK.Samples
             if (_webViewService == null)
             {
                 _logger.Log(LogType.Error, "[PaymentSdk] [PaymentBootstrapUnityIap] WebView service is missing or invalid.");
-                return;
             }
-
-            _ready = true;
         }
 
         /// <summary>
-        /// Call this (e.g. via UnityEvent) once the player identity is known.
-        /// Initializes Unity IAP with the Game Payment SDK store.
+        /// Call this once the player identity is known (e.g. via UnityEvent after login).
+        /// Starts Unity IAP initialization with the Game Payment SDK store.
         /// </summary>
         public void Initialize(string playerId)
         {
-            if (!_ready)
+            if (_settings == null || _webViewService == null)
             {
                 Debug.LogError("[PaymentBootstrapUnityIap] Cannot initialize: setup failed. Check earlier errors.");
                 return;
             }
-
-            _webViewService.Logger = _logger;
 
             GamePaymentIapModule paymentModule = GamePaymentIapModule.Instance(
                 _settings,
