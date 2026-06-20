@@ -19,12 +19,11 @@ namespace GamePaymentSDK.Storage
 
         private readonly string _storageKey;
 
-        public PlayerPrefsPendingOrderStorage(string clientId, string playerId)
+        public PlayerPrefsPendingOrderStorage( string playerId)
         {
-            string safeClientId = SanitizeKeyPart(clientId);
             string safePlayerId = SanitizeKeyPart(playerId);
 
-            _storageKey = $"{KeyPrefix}.{safeClientId}.{safePlayerId}";
+            _storageKey = $"{KeyPrefix}.{safePlayerId}";
         }
 
         public void Save(PendingOrder order)

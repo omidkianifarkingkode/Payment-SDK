@@ -11,19 +11,13 @@ namespace GamePaymentSDK.Services
         private readonly IPaymentApiClient _apiClient;
         private readonly IPendingOrderStorage _pendingOrderStorage;
 
-        public PaymentClaimService(
-            IPaymentApiClient apiClient,
-            IPendingOrderStorage pendingOrderStorage
-        )
+        public PaymentClaimService(IPaymentApiClient apiClient, IPendingOrderStorage pendingOrderStorage)
         {
             _apiClient = apiClient;
-            _pendingOrderStorage = pendingOrderStorage;
+            _pendingOrderStorage = pendingOrderStorage ?? throw new System.ArgumentNullException(nameof(pendingOrderStorage));
         }
 
-        public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimOrderAsync(
-            string playerId,
-            string orderId
-        )
+        public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimOrderAsync(string playerId, string orderId)
         {
             if (string.IsNullOrWhiteSpace(playerId))
             {
@@ -74,9 +68,7 @@ namespace GamePaymentSDK.Services
             return PaymentResult<List<PaymentPurchaseResult>>.Ok(purchases);
         }
 
-        public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimAllForPlayerAsync(
-            string playerId
-        )
+        public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimAllForPlayerAsync(string playerId)
         {
             if (string.IsNullOrWhiteSpace(playerId))
             {
@@ -117,9 +109,7 @@ namespace GamePaymentSDK.Services
             return PaymentResult<List<PaymentPurchaseResult>>.Ok(purchases);
         }
 
-        public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimLocalPendingOrdersAsync(
-            string playerId
-        )
+        public async Task<PaymentResult<List<PaymentPurchaseResult>>> ClaimLocalPendingOrdersAsync(string playerId)
         {
             if (string.IsNullOrWhiteSpace(playerId))
             {
@@ -162,10 +152,7 @@ namespace GamePaymentSDK.Services
             return result;
         }
 
-        private List<PaymentPurchaseResult> ConvertClaimItemsToPurchaseResults(
-            string playerId,
-            List<ClaimItemDto> claimItems
-        )
+        private List<PaymentPurchaseResult> ConvertClaimItemsToPurchaseResults(string playerId, List<ClaimItemDto> claimItems)
         {
             List<PaymentPurchaseResult> purchases = new();
 
@@ -203,9 +190,7 @@ namespace GamePaymentSDK.Services
             return purchases;
         }
 
-        private void RemoveClaimedOrdersFromStorage(
-            List<PaymentPurchaseResult> purchases
-        )
+        private void RemoveClaimedOrdersFromStorage(List<PaymentPurchaseResult> purchases)
         {
             if (purchases == null)
                 return;

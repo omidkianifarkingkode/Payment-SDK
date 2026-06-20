@@ -10,11 +10,7 @@ namespace GamePaymentSDK.Services
         private readonly IPendingOrderStorage _pendingOrderStorage;
         private readonly IProcessedTransactionStorage _processedTransactionStorage;
 
-        public PaymentLocalCleanupService(
-            PaymentConfiguration configuration,
-            IPendingOrderStorage pendingOrderStorage,
-            IProcessedTransactionStorage processedTransactionStorage
-        )
+        public PaymentLocalCleanupService(PaymentConfiguration configuration, IPendingOrderStorage pendingOrderStorage, IProcessedTransactionStorage processedTransactionStorage)
         {
             _configuration = configuration;
             _pendingOrderStorage = pendingOrderStorage;

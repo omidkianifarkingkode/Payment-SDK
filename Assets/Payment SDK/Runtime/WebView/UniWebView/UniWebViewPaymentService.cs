@@ -126,6 +126,7 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
             _webView.OnShouldClose += HandleShouldClose;
             _webView.OnOrientationChanged += HandleOrientationChanged;
             _webView.OnWebContentProcessTerminated += HandleWebContentProcessTerminated;
+            _webView.OnPageProgressChanged += HandlePageProgressChanged;
         }
 
         private void UnregisterEvents()
@@ -139,6 +140,18 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
             _webView.OnShouldClose -= HandleShouldClose;
             _webView.OnOrientationChanged -= HandleOrientationChanged;
             _webView.OnWebContentProcessTerminated -= HandleWebContentProcessTerminated;
+            _webView.OnMessageReceived -= HandleMessageReceived;
+            _webView.OnPageProgressChanged -= HandlePageProgressChanged;
+        }
+
+        private void HandlePageProgressChanged(UniWebView webView, float progress)
+        {
+            PaymentLogger.Log($"UniWebView page progress: {progress * 100f}%");
+        }
+
+        private void HandleMessageReceived(UniWebView webView, UniWebViewMessage message)
+        {
+            PaymentLogger.Log($"UniWebView message received: {message}");
         }
 
         private void HandlePageStarted(UniWebView webView, string url)
@@ -153,12 +166,7 @@ namespace GamePaymentSDK.WebView.UniWebViewAdapter
             UrlChanged?.Invoke(url);
         }
 
-        private void HandleLoadingErrorReceived(
-            UniWebView webView,
-            int errorCode,
-            string errorMessage,
-            UniWebViewNativeResultPayload payload
-        )
+        private void HandleLoadingErrorReceived(UniWebView webView, int errorCode, string errorMessage, UniWebViewNativeResultPayload payload)
         {
             string failingUrl = null;
 

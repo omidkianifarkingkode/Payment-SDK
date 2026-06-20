@@ -13,8 +13,9 @@ namespace GamePaymentSDK.Services
         {
             _configuration = configuration;
 
-            string clientId = configuration?.ClientId ?? string.Empty;
-            _expectedCallbackPath = $"/v1/payments/callback/{clientId}";
+            //string clientId = configuration?.ClientId ?? string.Empty;
+            _expectedCallbackPath = "/v1/payments/callback/";
+
         }
 
         public PaymentCallbackResult Parse(string url)
@@ -30,8 +31,8 @@ namespace GamePaymentSDK.Services
             if (string.IsNullOrWhiteSpace(url))
                 return result;
 
-            if (_configuration == null || string.IsNullOrWhiteSpace(_configuration.ClientId))
-                return result;
+            //if (_configuration == null || string.IsNullOrWhiteSpace(_configuration.ClientId))
+            //    return result;
 
             Uri uri;
 
@@ -55,7 +56,6 @@ namespace GamePaymentSDK.Services
             PaymentCallbackStatus status = ParseStatus(statusRaw);
 
             result.IsPaymentCallback = true;
-            result.ClientId = _configuration.ClientId;
             result.Authority = authority;
             result.StatusRaw = statusRaw;
             result.Status = status;
@@ -71,11 +71,16 @@ namespace GamePaymentSDK.Services
             if (string.IsNullOrWhiteSpace(path))
                 return false;
 
-            return string.Equals(
-                path.TrimEnd('/'),
+            path = path.TrimEnd('/');
+
+            return path.EndsWith(
                 _expectedCallbackPath.TrimEnd('/'),
                 StringComparison.OrdinalIgnoreCase
-            );
+            )
+            || path.IndexOf(
+                _expectedCallbackPath,
+                StringComparison.OrdinalIgnoreCase
+            ) >= 0;
         }
 
         private PaymentCallbackStatus ParseStatus(string status)

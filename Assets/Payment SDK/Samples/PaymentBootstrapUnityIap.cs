@@ -72,7 +72,6 @@ namespace GamePaymentSDK.Samples
             {
                 BaseUrl = _baseUrl,
                 ApiKey = _apiKey,
-                ClientId = _clientId,
                 Environment = PaymentEnvironment.Production,
                 RequestTimeoutSeconds = 20,
                 WebViewTimeoutSeconds = 300,

@@ -84,9 +84,7 @@ namespace GamePaymentSDK.Services
             return _cache.TryGetProduct(productKey, out product);
         }
 
-        private async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> LoadProductsAsync(
-            string operationName
-        )
+        private async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> LoadProductsAsync(string operationName)
         {
             if (_apiClient == null)
             {

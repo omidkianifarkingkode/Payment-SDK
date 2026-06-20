@@ -1,11 +1,4 @@
-/// Initialization Behavior:
-/// 1. Validate config/playerId.
-/// 2. GET /v1/products.
-/// 3. Store products in RAM.
-/// 4. Raise ProductsUpdated.
-/// 5. Raise Initialized(success).
-/// 6. Call pending claim recovery.
-/// 7. Raise PurchaseSucceeded for recovered purchases.
+
 
 using System;
 using System.Collections.Generic;
@@ -67,12 +60,10 @@ namespace GamePaymentSDK.Direct
             _apiClient = new PaymentApiClient(configuration);
 
             _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(
-                configuration?.ClientId,
                 playerId
             );
 
             _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(
-                configuration?.ClientId,
                 playerId
             );
 
@@ -111,6 +102,7 @@ namespace GamePaymentSDK.Direct
             );
         }
 
+      
         public async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync()
         {
             if (_isDisposed)
@@ -197,7 +189,7 @@ namespace GamePaymentSDK.Direct
                 ));
 
                 /*
-                 * Recovery should not block initialization success.
+                 * Recovery(Claim) should not block initialization success.
                  * Product catalog is ready now. Pending claim recovery runs after that.
                  */
                 PaymentResult<List<PaymentPurchaseResult>> recoveryResult =
@@ -238,9 +230,7 @@ namespace GamePaymentSDK.Direct
             return _productCatalogService.TryGetProduct(productKey, out product);
         }
 
-        public async Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(
-            string productKey
-        )
+        public async Task<PaymentResult<List<PaymentPurchaseResult>>> PurchaseAsync(string productKey)
         {
             if (_isDisposed)
             {

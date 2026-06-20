@@ -7,7 +7,6 @@ namespace GamePaymentSDK.Core
     {
         public string BaseUrl;
         public string ApiKey;
-        public string ClientId;
         public PaymentEnvironment Environment = PaymentEnvironment.Production;
 
         public int RequestTimeoutSeconds = 20;
@@ -28,12 +27,6 @@ namespace GamePaymentSDK.Core
             if (string.IsNullOrWhiteSpace(ApiKey))
             {
                 error = "ApiKey is required.";
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(ClientId))
-            {
-                error = "ClientId is required.";
                 return false;
             }
 

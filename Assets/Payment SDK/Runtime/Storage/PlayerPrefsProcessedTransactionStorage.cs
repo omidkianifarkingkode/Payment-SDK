@@ -11,12 +11,11 @@ namespace GamePaymentSDK.Storage
 
         private readonly string _storageKey;
 
-        public PlayerPrefsProcessedTransactionStorage(string clientId, string playerId)
+        public PlayerPrefsProcessedTransactionStorage(string playerId)
         {
-            string safeClientId = SanitizeKeyPart(clientId);
             string safePlayerId = SanitizeKeyPart(playerId);
 
-            _storageKey = $"{KeyPrefix}.{safeClientId}.{safePlayerId}";
+            _storageKey = $"{KeyPrefix}.{safePlayerId}";
         }
 
         public bool IsProcessed(string transactionId)
@@ -29,11 +28,7 @@ namespace GamePaymentSDK.Storage
             return collection.transactions.Exists(x => x.TransactionId == transactionId);
         }
 
-        public void MarkProcessed(
-            string transactionId,
-            string orderId,
-            string productKey
-        )
+        public void MarkProcessed(string transactionId, string orderId, string productKey)
         {
             if (string.IsNullOrWhiteSpace(transactionId))
             {
@@ -47,7 +42,7 @@ namespace GamePaymentSDK.Storage
                 x => x.TransactionId == transactionId
             );
 
-            ProcessedTransaction transaction = new ProcessedTransaction
+            ProcessedTransaction transaction = new()
             {
                 TransactionId = transactionId,
                 OrderId = orderId,
@@ -101,22 +96,22 @@ namespace GamePaymentSDK.Storage
         public int RemoveOlderThan(long unixSeconds)
         {
             ProcessedTransactionCollection collection = LoadCollection();
-        
+
             int removedCount = collection.transactions.RemoveAll(transaction =>
                 transaction == null ||
                 transaction.ProcessedAtUnixSeconds <= 0 ||
                 transaction.ProcessedAtUnixSeconds < unixSeconds
             );
-        
+
             if (removedCount > 0)
             {
                 SaveCollection(collection);
-        
+
                 PaymentLogger.Log(
                     $"Old processed transactions removed. count={removedCount}, olderThan={unixSeconds}"
                 );
             }
-        
+
             return removedCount;
         }
 
