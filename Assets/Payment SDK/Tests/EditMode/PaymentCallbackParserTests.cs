@@ -16,7 +16,7 @@ namespace GamePaymentSDK.Tests.EditMode
                 ApiKey = "key",
             };
 
-            return new PaymentCallbackParser(config);
+            return new PaymentCallbackParser(config, UnityEngine.Debug.unityLogger);
         }
 
         [Test]

@@ -8,6 +8,7 @@ using GamePaymentSDK.Core;
 using GamePaymentSDK.Services;
 using GamePaymentSDK.Storage;
 using GamePaymentSDK.WebView;
+using UnityEngine;
 
 namespace GamePaymentSDK.Direct
 {
@@ -20,7 +21,7 @@ namespace GamePaymentSDK.Direct
 
         private readonly PaymentConfiguration _configuration;
         private readonly string _playerId;
-
+        private readonly ILogger _logger;
         private readonly IPaymentApiClient _apiClient;
         private readonly IPendingOrderStorage _pendingOrderStorage;
         private readonly IProcessedTransactionStorage _processedTransactionStorage;
@@ -49,56 +50,55 @@ namespace GamePaymentSDK.Direct
         public GamePaymentController(
             PaymentConfiguration configuration,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
             _configuration = configuration;
             _playerId = playerId;
+            _logger = logger;
+            _apiClient = new PaymentApiClient(configuration, _logger);
 
-            PaymentLogger.SetEnabled(configuration?.EnableLogs ?? true);
+            _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(playerId, _logger);
 
-            _apiClient = new PaymentApiClient(configuration);
-
-            _pendingOrderStorage = new PlayerPrefsPendingOrderStorage(
-                playerId
-            );
-
-            _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(
-                playerId
-            );
+            _processedTransactionStorage = new PlayerPrefsProcessedTransactionStorage(playerId, _logger);
 
             _localCleanupService = new PaymentLocalCleanupService(
                 configuration,
                 _pendingOrderStorage,
-                _processedTransactionStorage
+                _processedTransactionStorage,
+                _logger
             );
 
-            _productCatalogCache = new ProductCatalogCache();
+            _productCatalogCache = new ProductCatalogCache(_logger);
 
             _productCatalogService = new ProductCatalogService(
                 _apiClient,
-                _productCatalogCache
+                _productCatalogCache,
+                _logger
             );
 
             _paymentClaimService = new PaymentClaimService(
                 _apiClient,
-                _pendingOrderStorage
+                _pendingOrderStorage,
+                _logger
             );
 
             _paymentRequestService = new PaymentRequestService(
                 _apiClient,
                 _productCatalogService,
-                _pendingOrderStorage
+                _pendingOrderStorage,
+                _logger
             );
 
-            _callbackParser = new PaymentCallbackParser(configuration);
+            _callbackParser = new PaymentCallbackParser(configuration, _logger);
 
             _purchaseFlowService = new PaymentPurchaseFlowService(
                 configuration,
                 _paymentRequestService,
                 _paymentClaimService,
                 webViewService,
-                _callbackParser
+                _callbackParser,
+                _logger
             );
         }
 
@@ -154,7 +154,7 @@ namespace GamePaymentSDK.Direct
 
             try
             {
-                PaymentLogger.Log("GamePayment initialization started.");
+                _logger.Log(LogType.Log, "[PaymentSdk] [GamePayment] Initialization started.");
 
                 _localCleanupService.RunCleanup();
 
@@ -197,12 +197,10 @@ namespace GamePaymentSDK.Direct
 
                 if (!recoveryResult.Success)
                 {
-                    PaymentLogger.LogWarning(
-                        $"Pending purchase recovery failed during initialize. reason={recoveryResult.FailureReason}, error={recoveryResult.ErrorMessage}"
-                    );
+                    _logger.Log(LogType.Warning, $"[PaymentSdk] [GamePayment] Pending purchase recovery failed during initialize. reason={recoveryResult.FailureReason}, error={recoveryResult.ErrorMessage}");
                 }
 
-                PaymentLogger.Log("GamePayment initialization completed.");
+                _logger.Log(LogType.Log, "[PaymentSdk] [GamePayment] Initialization completed.");
 
                 return productsResult;
             }
@@ -243,7 +241,7 @@ namespace GamePaymentSDK.Direct
             if (!_isInitialized)
             {
                 PaymentPurchaseFailedEventArgs failedArgs =
-                    new PaymentPurchaseFailedEventArgs(
+                    new(
                         productKey,
                         PaymentFailureReason.NotInitialized,
                         "GamePayment is not initialized."
@@ -301,16 +299,13 @@ namespace GamePaymentSDK.Direct
         {
             if (purchase == null)
             {
-                PaymentLogger.LogWarning("Cannot confirm null purchase.");
+                _logger.Log(LogType.Warning, "[PaymentSdk] [GamePayment] Cannot confirm null purchase.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(purchase.TransactionId))
             {
-                PaymentLogger.LogWarning(
-                    $"Cannot confirm purchase without transactionId. orderId={purchase.OrderId}, productKey={purchase.ProductKey}"
-                );
-
+                _logger.Log(LogType.Warning, $"[PaymentSdk] [GamePayment] Cannot confirm purchase without transactionId. orderId={purchase.OrderId}, productKey={purchase.ProductKey}");
                 return;
             }
 
@@ -333,7 +328,7 @@ namespace GamePaymentSDK.Direct
             PurchaseSucceeded = null;
             PurchaseFailed = null;
 
-            PaymentLogger.Log("GamePaymentController disposed.");
+            _logger.Log(LogType.Log, "[PaymentSdk] [GamePayment] GamePaymentController disposed.");
         }
 
         private PaymentResult ValidateBeforeInitialize()
@@ -377,18 +372,14 @@ namespace GamePaymentSDK.Direct
 
                 if (string.IsNullOrWhiteSpace(purchase.TransactionId))
                 {
-                    PaymentLogger.LogWarning(
-                        $"Purchase result has empty transactionId. productKey={purchase.ProductKey}, orderId={purchase.OrderId}"
-                    );
+                    _logger.Log(LogType.Warning, $"[PaymentSdk] [GamePayment] Purchase result has empty transactionId. productKey={purchase.ProductKey}, orderId={purchase.OrderId}");
 
                     continue;
                 }
 
                 if (_processedTransactionStorage.IsProcessed(purchase.TransactionId))
                 {
-                    PaymentLogger.Log(
-                        $"Purchase success skipped because transaction is already processed. transactionId={purchase.TransactionId}, productKey={purchase.ProductKey}"
-                    );
+                    _logger.Log(LogType.Log, $"[PaymentSdk] [GamePayment] Purchase success skipped because transaction is already processed. transactionId={purchase.TransactionId}, productKey={purchase.ProductKey}");
 
                     continue;
                 }

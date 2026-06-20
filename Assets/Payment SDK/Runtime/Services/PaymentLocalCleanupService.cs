@@ -1,6 +1,7 @@
 using System;
 using GamePaymentSDK.Core;
 using GamePaymentSDK.Storage;
+using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
@@ -9,12 +10,14 @@ namespace GamePaymentSDK.Services
         private readonly PaymentConfiguration _configuration;
         private readonly IPendingOrderStorage _pendingOrderStorage;
         private readonly IProcessedTransactionStorage _processedTransactionStorage;
+        private readonly ILogger _logger;
 
-        public PaymentLocalCleanupService(PaymentConfiguration configuration, IPendingOrderStorage pendingOrderStorage, IProcessedTransactionStorage processedTransactionStorage)
+        public PaymentLocalCleanupService(PaymentConfiguration configuration, IPendingOrderStorage pendingOrderStorage, IProcessedTransactionStorage processedTransactionStorage, ILogger logger)
         {
             _configuration = configuration;
             _pendingOrderStorage = pendingOrderStorage;
             _processedTransactionStorage = processedTransactionStorage;
+            _logger = logger;
         }
 
         public void RunCleanup()
@@ -41,9 +44,7 @@ namespace GamePaymentSDK.Services
 
             if (removedCount > 0)
             {
-                PaymentLogger.Log(
-                    $"Pending order cleanup completed. removedCount={removedCount}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentLocalCleanupService] Pending order cleanup completed. removedCount={removedCount}");
             }
         }
 
@@ -65,9 +66,7 @@ namespace GamePaymentSDK.Services
 
             if (removedCount > 0)
             {
-                PaymentLogger.Log(
-                    $"Processed transaction cleanup completed. removedCount={removedCount}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentLocalCleanupService] Processed transaction cleanup completed. removedCount={removedCount}");
             }
         }
     }

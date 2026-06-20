@@ -14,7 +14,6 @@ namespace GamePaymentSDK.Core
         public int ClaimRetryCount = 3;
         public int PendingOrderCleanupDays = 7;
         public int ProcessedTransactionHistoryDays = 90;
-        public bool EnableLogs = true;
 
         public bool IsValid(out string error)
         {

@@ -1,8 +1,9 @@
+using GamePaymentSDK.Core;
+using GamePaymentSDK.WebView;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using GamePaymentSDK.Core;
-using GamePaymentSDK.WebView;
+using UnityEngine;
 
 namespace GamePaymentSDK.Direct
 {
@@ -14,6 +15,7 @@ namespace GamePaymentSDK.Direct
         public static event Action<PaymentPurchaseFailedEventArgs> PurchaseFailed;
 
         private static GamePaymentController _controller;
+        private static ILogger _logger;
 
         public static bool IsInitialized =>
             _controller != null &&
@@ -33,15 +35,18 @@ namespace GamePaymentSDK.Direct
         public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(
             PaymentConfiguration configuration,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
             Dispose();
+
+            _logger = logger;
 
             _controller = new GamePaymentController(
                 configuration,
                 playerId,
-                webViewService
+                webViewService,
+                logger
             );
 
             HookControllerEvents(_controller);
@@ -101,13 +106,11 @@ namespace GamePaymentSDK.Direct
         {
             if (_controller == null)
             {
-                PaymentLogger.LogWarning(
-                    "Cannot confirm purchase because GamePayment is not initialized."
-                );
-        
+                _logger.Log(LogType.Warning, "[PaymentSdk] [GamePayment] Cannot confirm purchase because GamePayment is not initialized.");
+
                 return;
             }
-        
+
             _controller.ConfirmPurchaseProcessed(purchase);
         }
 

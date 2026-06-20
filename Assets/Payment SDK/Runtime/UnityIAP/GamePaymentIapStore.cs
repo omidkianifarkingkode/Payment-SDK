@@ -1,10 +1,11 @@
+using GamePaymentSDK.Core;
+using GamePaymentSDK.Direct;
+using GamePaymentSDK.WebView;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using GamePaymentSDK.Core;
-using GamePaymentSDK.Direct;
-using GamePaymentSDK.WebView;
+using UnityEngine;
 using UnityEngine.Purchasing;
 using UnityEngine.Purchasing.Extension;
 using UnityPurchaseFailureReason = UnityEngine.Purchasing.PurchaseFailureReason;
@@ -16,7 +17,7 @@ namespace GamePaymentSDK.UnityIAP
         private readonly PaymentConfiguration _configuration;
         private readonly string _playerId;
         private readonly IPaymentWebViewService _webViewService;
-
+        private readonly ILogger _logger;
         private IStoreCallback _callback;
         private GamePaymentController _controller;
 
@@ -26,19 +27,20 @@ namespace GamePaymentSDK.UnityIAP
         public GamePaymentIapStore(
             PaymentConfiguration configuration,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
             _configuration = configuration;
             _playerId = playerId;
             _webViewService = webViewService;
+            _logger = logger;
         }
 
         public void Initialize(IStoreCallback callback)
         {
             _callback = callback;
 
-            PaymentLogger.Log("GamePaymentIapStore initialized by Unity IAP.");
+            _logger.Log(LogType.Log, "[PaymentSdk] [GamePaymentIapStore] GamePaymentIapStore initialized by Unity IAP.");
         }
 
         public void RetrieveProducts(ReadOnlyCollection<ProductDefinition> products)
@@ -47,7 +49,7 @@ namespace GamePaymentSDK.UnityIAP
 
             if (_isRetrievingProducts)
             {
-                PaymentLogger.LogWarning("RetrieveProducts ignored because retrieval is already running.");
+                _logger.Log(LogType.Warning, "[PaymentSdk] [GamePaymentIapStore] RetrieveProducts ignored because retrieval is already running.");
                 return;
             }
 
@@ -73,16 +75,12 @@ namespace GamePaymentSDK.UnityIAP
         public void FinishTransaction(ProductDefinition product, string transactionId)
         {
             string productId = product?.storeSpecificId ?? product?.id ?? "unknown";
-        
-            PaymentLogger.Log(
-                $"FinishTransaction called. productId={productId}, transactionId={transactionId}"
-            );
-        
+
+            _logger.Log(LogType.Log, $"[PaymentSdk] [GamePaymentIapStore] FinishTransaction called. productId={productId}, transactionId={transactionId}");
+
             if (_controller == null)
             {
-                PaymentLogger.LogWarning(
-                    $"Cannot confirm processed transaction because controller is null. transactionId={transactionId}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [GamePaymentIapStore] Cannot confirm processed transaction because controller is null. transactionId={transactionId}");
         
                 return;
             }
@@ -108,7 +106,7 @@ namespace GamePaymentSDK.UnityIAP
             {
                 if (_callback == null)
                 {
-                    PaymentLogger.LogError("Cannot retrieve products because IStoreCallback is null.");
+                    _logger.Log(LogType.Error, "[PaymentSdk] [GamePaymentIapStore] Cannot retrieve products because IStoreCallback is null.");
                     return;
                 }
 
@@ -144,13 +142,11 @@ namespace GamePaymentSDK.UnityIAP
 
                 _callback.OnProductsRetrieved(descriptions);
 
-                PaymentLogger.Log(
-                    $"Unity IAP products retrieved. Count={descriptions.Count}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [GamePaymentIapStore] Unity IAP products retrieved. Count={descriptions.Count}");
             }
             catch (Exception exception)
             {
-                PaymentLogger.LogError($"RetrieveProductsAsync exception: {exception}");
+                _logger.Log(LogType.Error, $"[PaymentSdk] [GamePaymentIapStore] RetrieveProductsAsync exception: {exception}");
 
                 _callback?.OnSetupFailed(
                     InitializationFailureReason.PurchasingUnavailable,
@@ -171,7 +167,7 @@ namespace GamePaymentSDK.UnityIAP
             {
                 if (_callback == null)
                 {
-                    PaymentLogger.LogError("Cannot purchase because IStoreCallback is null.");
+                    _logger.Log(LogType.Error, "[PaymentSdk] [GamePaymentIapStore] Cannot purchase because IStoreCallback is null.");
                     return;
                 }
 
@@ -235,7 +231,7 @@ namespace GamePaymentSDK.UnityIAP
             }
             catch (Exception exception)
             {
-                PaymentLogger.LogError($"PurchaseAsync exception: {exception}");
+                _logger.Log(LogType.Error, $"[PaymentSdk] [GamePaymentIapStore] PurchaseAsync exception: {exception}");
 
                 NotifyPurchaseFailed(
                     productKey,
@@ -253,7 +249,8 @@ namespace GamePaymentSDK.UnityIAP
             _controller = new GamePaymentController(
                 _configuration,
                 _playerId,
-                _webViewService
+                _webViewService,
+                _logger
             );
 
             _controller.PurchaseSucceeded += HandleControllerPurchaseSucceeded;
@@ -324,9 +321,7 @@ namespace GamePaymentSDK.UnityIAP
 
                 if (!backendByKey.TryGetValue(productKey, out PaymentProduct paymentProduct))
                 {
-                    PaymentLogger.LogWarning(
-                        $"Unity IAP requested product not found in backend catalog. productKey={productKey}"
-                    );
+                    _logger.Log(LogType.Error, $"[PaymentSdk] [GamePaymentIapStore] Unity IAP requested product not found in backend catalog. productKey={productKey}");
 
                     continue;
                 }
@@ -339,7 +334,7 @@ namespace GamePaymentSDK.UnityIAP
                     ConvertPriceToDecimal(paymentProduct.Price)
                 );
 
-                ProductDescription description = new ProductDescription(
+                ProductDescription description = new(
                     productKey,
                     metadata
                 );
@@ -382,12 +377,9 @@ namespace GamePaymentSDK.UnityIAP
             productId ??= string.Empty;
             message ??= "Purchase failed.";
 
-            PaymentLogger.LogWarning(
-                $"Unity IAP purchase failed. productId={productId}, reason={reason}, message={message}"
-            );
+            _logger.Log(LogType.Warning, $"[PaymentSdk] [GamePaymentIapStore] Unity IAP purchase failed. productId={productId}, reason={reason}, message={message}");
 
-            PurchaseFailureDescription description =
-                new PurchaseFailureDescription(productId, reason, message);
+            PurchaseFailureDescription description = new(productId, reason, message);
 
             _callback?.OnPurchaseFailed(description);
         }
@@ -402,9 +394,7 @@ namespace GamePaymentSDK.UnityIAP
 
             if (_callback == null)
             {
-                PaymentLogger.LogWarning(
-                    $"Unity IAP callback is null. Cannot forward purchase success. productKey={purchase.ProductKey}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [GamePaymentIapStore] Unity IAP callback is null. Cannot forward purchase success. productKey={purchase.ProductKey}");
 
                 return;
             }
@@ -415,9 +405,7 @@ namespace GamePaymentSDK.UnityIAP
                 purchase.TransactionId
             );
 
-            PaymentLogger.Log(
-                $"Unity IAP purchase success forwarded. productKey={purchase.ProductKey}, transactionId={purchase.TransactionId}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [GamePaymentIapStore] Unity IAP purchase success forwarded. productKey={purchase.ProductKey}, transactionId={purchase.TransactionId}");
         }
 
         private void HandleControllerPurchaseFailed(PaymentPurchaseFailedEventArgs args)

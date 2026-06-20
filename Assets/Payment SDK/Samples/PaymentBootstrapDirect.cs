@@ -20,14 +20,25 @@ namespace GamePaymentSDK.Samples
         [Tooltip("Assign MockPaymentWebViewService here for Editor testing.")]
         [SerializeField] private MockPaymentWebViewService _mockWebViewService;
 
+        [Header("Logging")]
+        [SerializeField] private bool _logEnabled = true;
+        [SerializeField] private LogType _logLevel = LogType.Log;
+
         [Header("UI")]
         [SerializeField] private PaymentProductListUI _productListUI;
         [SerializeField] private PaymentRewardGrantExample _rewardGrant;
 
         private PaymentConfiguration _configuration;
+        private ILogger _logger;
 
         private async void Start()
         {
+            _logger = new Logger(Debug.unityLogger.logHandler)
+            {
+                logEnabled = _logEnabled,
+                filterLogType = _logLevel
+            };
+
             PaymentSettings settings = PaymentSettings.Resolve(_settings);
 
             if (settings == null)
@@ -55,6 +66,8 @@ namespace GamePaymentSDK.Samples
                 return;
             }
 
+            webViewService.Logger = _logger;
+
             GamePayment.Initialized += HandleInitialized;
             GamePayment.ProductsUpdated += HandleProductsUpdated;
             GamePayment.PurchaseSucceeded += HandlePurchaseSucceeded;
@@ -64,7 +77,8 @@ namespace GamePaymentSDK.Samples
                 await GamePayment.InitializeAsync(
                     _configuration,
                     settings.PlayerId,
-                    webViewService
+                    webViewService,
+                    _logger
                 );
 
             if (!result.Success)
@@ -119,6 +133,7 @@ namespace GamePaymentSDK.Samples
             if (_mockWebViewService != null)
             {
                 _mockWebViewService.SetConfiguration(_configuration);
+                _mockWebViewService.Logger = _logger;
                 return _mockWebViewService;
             }
 #endif
@@ -154,14 +169,14 @@ namespace GamePaymentSDK.Samples
             Debug.Log(
                 $"[PaymentBootstrapDirect] Purchase succeeded. productKey={result.ProductKey}, orderId={result.OrderId}"
             );
-        
+
             try
             {
                 if (_rewardGrant != null)
                     _rewardGrant.Grant(result.ProductKey);
-        
+
                 GamePayment.ConfirmPurchaseProcessed(result);
-        
+
                 Debug.Log(
                     $"[PaymentBootstrapDirect] Purchase processed locally. transactionId={result.TransactionId}"
                 );

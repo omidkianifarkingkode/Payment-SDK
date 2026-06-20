@@ -19,6 +19,8 @@ namespace GamePaymentSDK.WebView.Mock
         private Coroutine _autoCompleteRoutine;
         private string _lastOpenedUrl;
 
+        public ILogger Logger { get; set; }
+
         public void SetConfiguration(PaymentConfiguration configuration)
         {
             _configuration = configuration;
@@ -29,7 +31,7 @@ namespace GamePaymentSDK.WebView.Mock
             _lastOpenedUrl = url;
             Application.OpenURL(url);
 
-            PaymentLogger.Log($"Mock WebView opened: {url}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [MockPaymentWebViewService] Mock WebView opened: {url}");
 
             UrlChanged?.Invoke(url);
 
@@ -44,7 +46,7 @@ namespace GamePaymentSDK.WebView.Mock
 
         public void Close()
         {
-            PaymentLogger.Log("Mock WebView closed by SDK.");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [MockPaymentWebViewService] Mock WebView closed by SDK.");
 
             StopAutoCompleteRoutine();
         }
@@ -52,27 +54,27 @@ namespace GamePaymentSDK.WebView.Mock
         public void SimulateSuccess()
         {
             string callbackUrl = BuildCallbackUrl("OK");
-            PaymentLogger.Log($"Mock WebView simulate success: {callbackUrl}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [MockPaymentWebViewService] Mock WebView simulate success: {callbackUrl}");
             UrlChanged?.Invoke(callbackUrl);
         }
 
         public void SimulateCancel()
         {
             string callbackUrl = BuildCallbackUrl("NOK");
-            PaymentLogger.Log($"Mock WebView simulate cancel: {callbackUrl}");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [MockPaymentWebViewService] Mock WebView simulate cancel: {callbackUrl}");
             UrlChanged?.Invoke(callbackUrl);
         }
 
         public void SimulateUserClose()
         {
-            PaymentLogger.Log("Mock WebView simulate user close.");
+            Logger.Log(LogType.Log, $"[PaymentSdk] [MockPaymentWebViewService] Mock WebView simulate user close.");
             StopAutoCompleteRoutine();
             ClosedByUser?.Invoke();
         }
 
         public void SimulateLoadFailed(string message = "Mock WebView load failed.")
         {
-            PaymentLogger.LogWarning(message);
+            Logger.Log(LogType.Warning, message);
             StopAutoCompleteRoutine();
             LoadFailed?.Invoke(message);
         }
@@ -103,10 +105,6 @@ namespace GamePaymentSDK.WebView.Mock
             string baseUrl = _configuration != null
                 ? _configuration.GetNormalizedBaseUrl()
                 : "https://mock-payment.local";
-
-            //string clientId = _configuration != null
-            //    ? _configuration.ClientId
-            //    : "client_mock";
 
             string authority = ExtractMockAuthority(_lastOpenedUrl);
 

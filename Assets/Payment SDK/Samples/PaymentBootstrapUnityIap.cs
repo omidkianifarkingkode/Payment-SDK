@@ -29,12 +29,18 @@ namespace GamePaymentSDK.Samples
         [SerializeField] private MonoBehaviour _deviceWebViewService;
         [SerializeField] private MockPaymentWebViewService _mockWebViewService;
 
+        [Header("Logging")]
+        [SerializeField] private bool _logEnabled = true;
+        [SerializeField] private LogType _logLevel = LogType.Log;
+
         [Header("Reward")]
         [SerializeField] private PaymentRewardGrantExample _rewardGrant;
 
         private IStoreController _storeController;
         private IExtensionProvider _extensionProvider;
         private PaymentConfiguration _configuration;
+
+        private ILogger _logger;
 
         private void Start()
         {
@@ -45,7 +51,7 @@ namespace GamePaymentSDK.Samples
         {
             if (_storeController == null)
             {
-                Debug.LogWarning("[PaymentBootstrapUnityIap] Store controller is not ready.");
+                _logger.Log(LogType.Error, "[PaymentSdk] [PaymentBootstrapUnityIap] Store controller is not ready.");
                 return;
             }
 
@@ -53,13 +59,13 @@ namespace GamePaymentSDK.Samples
 
             if (product == null)
             {
-                Debug.LogWarning($"[PaymentBootstrapUnityIap] Product not found: {productKey}");
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentBootstrapUnityIap] Product not found: {productKey}");
                 return;
             }
 
             if (!product.availableToPurchase)
             {
-                Debug.LogWarning($"[PaymentBootstrapUnityIap] Product is not available: {productKey}");
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentBootstrapUnityIap] Product is not available: {productKey}");
                 return;
             }
 
@@ -68,6 +74,12 @@ namespace GamePaymentSDK.Samples
 
         private void InitializePurchasing()
         {
+            _logger = new Logger(Debug.unityLogger.logHandler)
+            {
+                logEnabled = _logEnabled,
+                filterLogType = _logLevel
+            };
+
             _configuration = new PaymentConfiguration
             {
                 BaseUrl = _baseUrl,
@@ -75,22 +87,24 @@ namespace GamePaymentSDK.Samples
                 Environment = PaymentEnvironment.Production,
                 RequestTimeoutSeconds = 20,
                 WebViewTimeoutSeconds = 300,
-                ClaimRetryCount = 3,
-                EnableLogs = true
+                ClaimRetryCount = 3
             };
 
             IPaymentWebViewService webViewService = ResolveWebViewService();
 
             if (webViewService == null)
             {
-                Debug.LogError("[PaymentBootstrapUnityIap] WebView service is missing or invalid.");
+                _logger.Log(LogType.Error, "[PaymentSdk] [PaymentBootstrapUnityIap] WebView service is missing or invalid.");
                 return;
             }
+
+            webViewService.Logger = _logger;
 
             GamePaymentIapModule paymentModule = GamePaymentIapModule.Instance(
                 _configuration,
                 _playerId,
-                webViewService
+                webViewService,
+                _logger
             );
 
             ConfigurationBuilder builder = ConfigurationBuilder.Instance(
@@ -124,6 +138,7 @@ namespace GamePaymentSDK.Samples
             if (_mockWebViewService != null)
             {
                 _mockWebViewService.SetConfiguration(_configuration);
+                _mockWebViewService.Logger = _logger;
                 return _mockWebViewService;
             }
 #endif

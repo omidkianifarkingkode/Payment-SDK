@@ -18,7 +18,7 @@ namespace GamePaymentSDK.Tests.EditMode
         {
             _api = new FakePaymentApiClient();
             _storage = new InMemoryPendingOrderStorage();
-            _service = new PaymentClaimService(_api, _storage);
+            _service = new PaymentClaimService(_api, _storage, UnityEngine.Debug.unityLogger);
         }
 
         private static PendingOrder Order(string orderId)

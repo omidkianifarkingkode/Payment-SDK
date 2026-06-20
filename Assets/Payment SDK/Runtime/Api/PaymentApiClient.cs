@@ -16,13 +16,15 @@ namespace GamePaymentSDK.Api
         private const string JsonContentType = "application/json";
 
         private readonly PaymentConfiguration _configuration;
+        private readonly ILogger _logger;
         private readonly string _baseUrl;
         private readonly bool _isValid;
         private readonly string _configError;
 
-        public PaymentApiClient(PaymentConfiguration configuration)
+        public PaymentApiClient(PaymentConfiguration configuration, ILogger logger)
         {
             _configuration = configuration;
+            _logger = logger;
 
             if (_configuration == null)
             {
@@ -31,8 +33,6 @@ namespace GamePaymentSDK.Api
                 _baseUrl = string.Empty;
                 return;
             }
-
-            PaymentLogger.SetEnabled(_configuration.EnableLogs);
 
             _isValid = _configuration.IsValid(out _configError);
             _baseUrl = _configuration.GetNormalizedBaseUrl();
@@ -265,7 +265,7 @@ namespace GamePaymentSDK.Api
 
         private async Task<PaymentResult<string>> SendAsync(UnityWebRequest request)
         {
-            PaymentLogger.Log($"{request.method} {request.url}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] {request.method} {request.url}");
 
             UnityWebRequestAsyncOperation operation;
 

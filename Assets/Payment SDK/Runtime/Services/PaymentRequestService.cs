@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using GamePaymentSDK.Api;
 using GamePaymentSDK.Core;
 using GamePaymentSDK.Storage;
+using UnityEngine;
 
 namespace GamePaymentSDK.Services
 {
@@ -35,18 +36,23 @@ namespace GamePaymentSDK.Services
         private readonly IPaymentApiClient _apiClient;
         private readonly IProductCatalogService _productCatalogService;
         private readonly IPendingOrderStorage _pendingOrderStorage;
-
+        private readonly ILogger _logger;
         private bool _isPurchaseInProgress;
         private string _activeOrderId;
 
         public bool IsPurchaseInProgress => _isPurchaseInProgress;
         public string ActiveOrderId => _activeOrderId;
 
-        public PaymentRequestService(IPaymentApiClient apiClient, IProductCatalogService productCatalogService, IPendingOrderStorage pendingOrderStorage)
+        public PaymentRequestService(
+            IPaymentApiClient apiClient,
+            IProductCatalogService productCatalogService,
+            IPendingOrderStorage pendingOrderStorage,
+            ILogger logger)
         {
             _apiClient = apiClient;
             _productCatalogService = productCatalogService;
             _pendingOrderStorage = pendingOrderStorage;
+            _logger = logger;
         }
 
         public async Task<PaymentResult<PaymentStartResult>> RequestPaymentAsync(string playerId, string productKey)
@@ -72,7 +78,7 @@ namespace GamePaymentSDK.Services
             _isPurchaseInProgress = true;
             _activeOrderId = null;
 
-            PaymentLogger.Log($"Payment request started. playerId={playerId}, productKey={productKey}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentRequestService] Payment request started. playerId={playerId}, productKey={productKey}");
 
             PaymentResult<PaymentRequestResponseDto> apiResult =
                 await _apiClient.RequestPaymentAsync(playerId, productKey);
@@ -82,9 +88,7 @@ namespace GamePaymentSDK.Services
                 _isPurchaseInProgress = false;
                 _activeOrderId = null;
 
-                PaymentLogger.LogWarning(
-                    $"Payment request failed. productKey={productKey}, reason={apiResult.FailureReason}, error={apiResult.ErrorMessage}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentRequestService] Payment request failed. productKey={productKey}, reason={apiResult.FailureReason}, error={apiResult.ErrorMessage}");
 
                 return PaymentResult<PaymentStartResult>.Fail(
                     apiResult.FailureReason,
@@ -117,16 +121,14 @@ namespace GamePaymentSDK.Services
                 PaymentUrl = response.paymentUrl
             };
 
-            PaymentLogger.Log(
-                $"Payment request completed. orderId={result.OrderId}, productKey={result.ProductKey}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentRequestService] Payment request completed. orderId={result.OrderId}, productKey={result.ProductKey}");
 
             return PaymentResult<PaymentStartResult>.Ok(result);
         }
 
         public void ClearActivePurchase()
         {
-            PaymentLogger.Log($"Clear active purchase. activeOrderId={_activeOrderId}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentRequestService] Clear active purchase. activeOrderId={_activeOrderId}");
 
             _isPurchaseInProgress = false;
             _activeOrderId = null;
@@ -218,9 +220,7 @@ namespace GamePaymentSDK.Services
 
             if (!_pendingOrderStorage.TryGet(orderId, out PendingOrder order))
             {
-                PaymentLogger.LogWarning(
-                    $"Cannot update pending order status. Order not found. orderId={orderId}, status={status}"
-                );
+                _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentRequestService] Cannot update pending order status. Order not found. orderId={orderId}, status={status}");
 
                 return;
             }
@@ -228,9 +228,7 @@ namespace GamePaymentSDK.Services
             order.Status = status;
             _pendingOrderStorage.Save(order);
 
-            PaymentLogger.Log(
-                $"Pending order status updated. orderId={orderId}, status={status}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentRequestService] Pending order status updated. orderId={orderId}, status={status}"); 
         }
     }
 }

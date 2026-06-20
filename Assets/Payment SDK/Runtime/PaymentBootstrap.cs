@@ -15,30 +15,28 @@ public sealed class PaymentBootstrap : MonoBehaviour
     [Header("WebView")]
     [SerializeField] private MonoBehaviour _webViewServiceComponent;
 
-    private void Awake()
-    {
-        var webViewService = _webViewServiceComponent as IPaymentWebViewService;
+    [Header("Logging")]
+    [SerializeField] private bool _logEnabled = true;
+    [SerializeField] private LogType _logLevel = LogType.Log;
 
-        if (webViewService == null)
-        {
-            Debug.LogError(
-                $"{nameof(_webViewServiceComponent)} must implement {nameof(IPaymentWebViewService)}",
-                this
-            );
-        }
-    }
+    private ILogger _logger;
 
     private async void Start()
     {
-        PaymentConfiguration config = new PaymentConfiguration
+        _logger = new Logger(Debug.unityLogger.logHandler)
+        {
+            logEnabled = _logEnabled,
+            filterLogType = _logLevel
+        };
+
+        PaymentConfiguration config = new()
         {
             BaseUrl = _baseUrl,
             ApiKey = _apiKey,
             Environment = PaymentEnvironment.Production,
             RequestTimeoutSeconds = 20,
             WebViewTimeoutSeconds = 300,
-            ClaimRetryCount = 3,
-            EnableLogs = true
+            ClaimRetryCount = 3
         };
 
         GamePayment.Initialized += OnInitialized;
@@ -46,16 +44,25 @@ public sealed class PaymentBootstrap : MonoBehaviour
         GamePayment.PurchaseSucceeded += OnPurchaseSucceeded;
         GamePayment.PurchaseFailed += OnPurchaseFailed;
 
+        if (_webViewServiceComponent is not IPaymentWebViewService webViewService)
+        {
+            _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentBootstrap] {nameof(_webViewServiceComponent)} must implement {nameof(IPaymentWebViewService)}");
+            return;
+        }
+
+        webViewService.Logger = _logger;
+
         PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
             await GamePayment.InitializeAsync(
                 config,
                 _playerId,
-                _webViewServiceComponent as IPaymentWebViewService
+                webViewService,
+                _logger
             );
 
         if (!result.Success)
         {
-            Debug.LogWarning($"Payment init failed: {result.FailureReason} / {result.ErrorMessage}");
+            _logger.Log(LogType.Warning, $"[PaymentSdk] [PaymentBootstrap] Payment init failed: {result.FailureReason} / {result.ErrorMessage}");
         }
     }
 
@@ -66,17 +73,17 @@ public sealed class PaymentBootstrap : MonoBehaviour
 
     private void OnInitialized(PaymentInitializedEventArgs args)
     {
-        Debug.Log($"Payment initialized: {args.Success}");
+        _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentBootstrap] Payment initialized: {args.Success}");
     }
 
     private void OnProductsUpdated(IReadOnlyCollection<PaymentProduct> products)
     {
-        Debug.Log($"Payment products loaded: {products.Count}");
+        _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentBootstrap] Payment products loaded: {products.Count}");
     }
 
     private void OnPurchaseSucceeded(PaymentPurchaseResult result)
     {
-        Debug.Log($"Purchase succeeded. product={result.ProductKey}, order={result.OrderId}");
+        _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentBootstrap] Purchase succeeded. product={result.ProductKey}, order={result.OrderId}");
 
         // Grant reward here.
         // Example:
@@ -85,9 +92,8 @@ public sealed class PaymentBootstrap : MonoBehaviour
 
     private void OnPurchaseFailed(PaymentPurchaseFailedEventArgs args)
     {
-        Debug.LogWarning(
-            $"Purchase failed. product={args.ProductKey}, reason={args.FailureReason}, error={args.ErrorMessage}"
-        );
+        _logger.Log(LogType.Warning, $"[PaymentSdk] [PaymentBootstrap] Purchase failed." +
+            $" product={args.ProductKey}, reason={args.FailureReason}, error={args.ErrorMessage}");
     }
 
     private void OnDestroy()

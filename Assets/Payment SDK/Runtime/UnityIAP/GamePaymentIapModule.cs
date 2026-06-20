@@ -2,6 +2,7 @@ using GamePaymentSDK.Core;
 using GamePaymentSDK.WebView;
 using UnityEngine.Purchasing;
 using UnityEngine.Purchasing.Extension;
+using UnityEngine;
 
 namespace GamePaymentSDK.UnityIAP
 {
@@ -10,28 +11,31 @@ namespace GamePaymentSDK.UnityIAP
         private readonly PaymentConfiguration _configuration;
         private readonly string _playerId;
         private readonly IPaymentWebViewService _webViewService;
+        private readonly ILogger _logger;
 
         private GamePaymentIapModule(
             PaymentConfiguration configuration,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
             _configuration = configuration;
             _playerId = playerId;
             _webViewService = webViewService;
+            _logger = logger;
         }
 
         public static GamePaymentIapModule Instance(
             PaymentConfiguration configuration,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
             return new GamePaymentIapModule(
                 configuration,
                 playerId,
-                webViewService
+                webViewService,
+                logger
             );
         }
 
@@ -42,7 +46,8 @@ namespace GamePaymentSDK.UnityIAP
                 new GamePaymentIapStore(
                     _configuration,
                     _playerId,
-                    _webViewService
+                    _webViewService,
+                    _logger
                 )
             );
         }

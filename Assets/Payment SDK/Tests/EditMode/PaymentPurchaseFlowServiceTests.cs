@@ -47,7 +47,7 @@ namespace GamePaymentSDK.Tests.EditMode
 
             _claimService = new FakePaymentClaimService();
             _webView = new FakeWebViewService();
-            _parser = new PaymentCallbackParser(_config);
+            _parser = new PaymentCallbackParser(_config, UnityEngine.Debug.unityLogger);
         }
 
         private PaymentPurchaseFlowService CreateFlow()
@@ -57,7 +57,8 @@ namespace GamePaymentSDK.Tests.EditMode
                 _requestService,
                 _claimService,
                 _webView,
-                _parser
+                _parser,
+                UnityEngine.Debug.unityLogger
             );
         }
 
@@ -197,7 +198,8 @@ namespace GamePaymentSDK.Tests.EditMode
                 _requestService,
                 _claimService,
                 null,
-                _parser
+                _parser,
+                UnityEngine.Debug.unityLogger
             );
 
             PaymentResult<List<PaymentPurchaseResult>> result =
