@@ -1,3 +1,4 @@
+using GamePaymentSDK.Direct;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +16,14 @@ namespace GamePaymentSDK.Samples
         }
 
         [SerializeField] private List<ProductReward> _rewards = new();
+
+        private void Awake()
+        {
+            GamePayment.PurchaseSucceeded += (result) =>
+            {
+                Grant(result.ProductKey);
+            };
+        }
 
         public void Grant(string productKey)
         {

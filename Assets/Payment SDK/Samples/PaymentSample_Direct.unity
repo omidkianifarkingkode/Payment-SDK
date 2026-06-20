@@ -893,14 +893,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 682671430}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5bc1625d942ebf443b77b08edada6485, type: 3}
+  m_Script: {fileID: 11500000, guid: 72c4c722b8fc2da43b49450849bdec97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _settings: {fileID: 0}
-  _deviceWebViewService: {fileID: 1539038973}
-  _mockWebViewService: {fileID: 1122692100}
-  _productListUI: {fileID: 1589812882}
-  _rewardGrant: {fileID: 1891111736}
+  _webViewServiceComponent: {fileID: 1539038973}
 --- !u!4 &682671432
 Transform:
   m_ObjectHideFlags: 0
@@ -914,7 +910,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1122692101}
   - {fileID: 1539038974}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1473,63 +1468,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &1122692099
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1122692101}
-  - component: {fileID: 1122692100}
-  m_Layer: 0
-  m_Name: Mock Webview
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1122692100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1122692099}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6725ed1aa2357b349a04b58882fa974a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _configuration:
-    BaseUrl: 21342342
-    ApiKey: T-apikey-pvtseqgvzzsu7wh4yxo2k1h3
-    Environment: 1
-    RequestTimeoutSeconds: 20
-    WebViewTimeoutSeconds: 300
-    ClaimRetryCount: 3
-    PendingOrderCleanupDays: 7
-    ProcessedTransactionHistoryDays: 90
-    EnableLogs: 1
-  _autoComplete: 1
-  _autoSuccess: 1
-  _autoCompleteDelaySeconds: 2
---- !u!4 &1122692101
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1122692099}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 682671432}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1152308702
 GameObject:
   m_ObjectHideFlags: 0
@@ -1838,7 +1776,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1355297665}
   m_HandleRect: {fileID: 1355297664}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -1992,7 +1930,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 2.5149536, y: 113.085}
+  m_AnchoredPosition: {x: 2.5149536, y: 113.08499}
   m_SizeDelta: {x: 5.03, y: -226.17}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1589812884

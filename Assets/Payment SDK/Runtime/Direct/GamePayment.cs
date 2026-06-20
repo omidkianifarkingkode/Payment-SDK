@@ -39,7 +39,7 @@ namespace GamePaymentSDK.Direct
         /// Stores the SDK configuration. Call this once from your bootstrap (e.g. in Start).
         /// Afterwards call <see cref="InitializeAsync"/> when the player identity is known.
         /// </summary>
-        public static void Setup(
+        internal static void Setup(
             PaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
@@ -56,8 +56,7 @@ namespace GamePaymentSDK.Direct
         /// Initializes the SDK with the resolved player identity.
         /// Requires <see cref="Setup"/> to have been called first.
         /// </summary>
-        public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(
-            string playerId)
+        public static async Task<PaymentResult<IReadOnlyCollection<PaymentProduct>>> InitializeAsync(string playerId)
         {
             if (_settings == null)
             {
