@@ -10,9 +10,8 @@ namespace GamePaymentSDK.Samples
     public sealed class PaymentBootstrapDirect : MonoBehaviour
     {
         [Header("Payment Service")]
-        [SerializeField] private string _baseUrl;
-        [SerializeField] private string _apiKey;
-        [SerializeField] private string _playerId;
+        [Tooltip("Payment data asset. If left empty, loads Resources/" + PaymentSettings.DefaultResourcePath + ".")]
+        [SerializeField] private PaymentSettings _settings;
 
         [Header("WebView")]
         [Tooltip("Assign UniWebViewPaymentService here for device builds.")]
@@ -29,16 +28,24 @@ namespace GamePaymentSDK.Samples
 
         private async void Start()
         {
-            _configuration = new PaymentConfiguration
+            PaymentSettings settings = PaymentSettings.Resolve(_settings);
+
+            if (settings == null)
             {
-                BaseUrl = _baseUrl,
-                ApiKey = _apiKey,
-                Environment = PaymentEnvironment.Production,
-                RequestTimeoutSeconds = 20,
-                WebViewTimeoutSeconds = 300,
-                ClaimRetryCount = 3,
-                EnableLogs = true
-            };
+                Debug.LogError(
+                    "[PaymentBootstrapDirect] PaymentSettings is missing. Assign one in the inspector " +
+                    "or create it via Tools > Game Payment SDK > Create Payment Settings."
+                );
+                return;
+            }
+
+            _configuration = settings.ToConfiguration();
+
+            if (!_configuration.IsValid(out string configError))
+            {
+                Debug.LogError($"[PaymentBootstrapDirect] PaymentSettings is invalid: {configError}");
+                return;
+            }
 
             IPaymentWebViewService webViewService = ResolveWebViewService();
 
@@ -56,7 +63,7 @@ namespace GamePaymentSDK.Samples
             PaymentResult<IReadOnlyCollection<PaymentProduct>> result =
                 await GamePayment.InitializeAsync(
                     _configuration,
-                    _playerId,
+                    settings.PlayerId,
                     webViewService
                 );
 

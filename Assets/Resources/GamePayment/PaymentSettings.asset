@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30b6d71009e4d134280e095b5f9f3294, type: 3}
+  m_Name: PaymentSettings
+  m_EditorClassIdentifier: 
+  _baseUrl: 
+  _apiKey: 
+  _playerId: 
+  _environment: 0
+  _requestTimeoutSeconds: 20
+  _webViewTimeoutSeconds: 300
+  _claimRetryCount: 3
+  _pendingOrderCleanupDays: 7
+  _processedTransactionHistoryDays: 90
+  _enableLogs: 1
