@@ -11,7 +11,7 @@ namespace GamePaymentSDK.Tests.EditMode
         public void SetUp()
         {
             _storage = new PlayerPrefsProcessedTransactionStorage(
-                "player-1"
+                "player-1", UnityEngine.Debug.unityLogger
             );
             _storage.Clear();
         }

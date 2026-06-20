@@ -15,24 +15,24 @@ namespace GamePaymentSDK.Api
         private const string HeaderAccept = "Accept";
         private const string JsonContentType = "application/json";
 
-        private readonly PaymentConfiguration _configuration;
+        private readonly PaymentSettings _configuration;
+        private readonly ILogger _logger;
         private readonly string _baseUrl;
         private readonly bool _isValid;
         private readonly string _configError;
 
-        public PaymentApiClient(PaymentConfiguration configuration)
+        public PaymentApiClient(PaymentSettings configuration, ILogger logger)
         {
             _configuration = configuration;
+            _logger = logger;
 
             if (_configuration == null)
             {
                 _isValid = false;
-                _configError = "PaymentConfiguration is null.";
+                _configError = "PaymentSettings is null.";
                 _baseUrl = string.Empty;
                 return;
             }
-
-            PaymentLogger.SetEnabled(_configuration.EnableLogs);
 
             _isValid = _configuration.IsValid(out _configError);
             _baseUrl = _configuration.GetNormalizedBaseUrl();
@@ -265,7 +265,7 @@ namespace GamePaymentSDK.Api
 
         private async Task<PaymentResult<string>> SendAsync(UnityWebRequest request)
         {
-            PaymentLogger.Log($"{request.method} {request.url}");
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PaymentClaimService] {request.method} {request.url}");
 
             UnityWebRequestAsyncOperation operation;
 

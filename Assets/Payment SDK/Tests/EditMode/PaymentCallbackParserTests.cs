@@ -1,6 +1,6 @@
-using GamePaymentSDK.Core;
 using GamePaymentSDK.Services;
 using NUnit.Framework;
+using GamePaymentSDK.Core;
 
 namespace GamePaymentSDK.Tests.EditMode
 {
@@ -8,15 +8,9 @@ namespace GamePaymentSDK.Tests.EditMode
     {
         private const string ClientId = "client-123";
 
-        private static PaymentCallbackParser CreateParser(string clientId = ClientId)
+        private static PaymentCallbackParser CreateParser()
         {
-            PaymentConfiguration config = new PaymentConfiguration
-            {
-                BaseUrl = "https://api.example.com",
-                ApiKey = "key",
-            };
-
-            return new PaymentCallbackParser(config);
+            return new PaymentCallbackParser(UnityEngine.Debug.unityLogger);
         }
 
         [Test]

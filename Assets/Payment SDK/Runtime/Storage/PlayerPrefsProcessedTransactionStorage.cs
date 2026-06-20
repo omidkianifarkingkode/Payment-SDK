@@ -10,12 +10,14 @@ namespace GamePaymentSDK.Storage
         private const string KeyPrefix = "GamePaymentSDK.ProcessedTransactions";
 
         private readonly string _storageKey;
+        private readonly ILogger _logger;
 
-        public PlayerPrefsProcessedTransactionStorage(string playerId)
+        public PlayerPrefsProcessedTransactionStorage(string playerId, ILogger logger)
         {
             string safePlayerId = SanitizeKeyPart(playerId);
 
             _storageKey = $"{KeyPrefix}.{safePlayerId}";
+            _logger = logger;
         }
 
         public bool IsProcessed(string transactionId)
@@ -32,7 +34,7 @@ namespace GamePaymentSDK.Storage
         {
             if (string.IsNullOrWhiteSpace(transactionId))
             {
-                PaymentLogger.LogWarning("Cannot mark processed transaction without transactionId.");
+                _logger.Log(LogType.Error, "[PaymentSdk] [PlayerPrefsProcessedTransactionStorage] Cannot mark processed transaction without transactionId.");
                 return;
             }
 
@@ -61,9 +63,7 @@ namespace GamePaymentSDK.Storage
 
             SaveCollection(collection);
 
-            PaymentLogger.Log(
-                $"Transaction marked as processed. transactionId={transactionId}, productKey={productKey}"
-            );
+            _logger.Log(LogType.Log, $"[PaymentSdk] [PlayerPrefsProcessedTransactionStorage] Transaction marked as processed. transactionId={transactionId}, productKey={productKey}");
         }
 
         public List<ProcessedTransaction> GetAll()
@@ -87,9 +87,7 @@ namespace GamePaymentSDK.Storage
             {
                 SaveCollection(collection);
 
-                PaymentLogger.Log(
-                    $"Processed transaction removed. transactionId={transactionId}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PlayerPrefsProcessedTransactionStorage] Processed transaction removed. transactionId={transactionId}");
             }
         }
 
@@ -107,9 +105,7 @@ namespace GamePaymentSDK.Storage
             {
                 SaveCollection(collection);
 
-                PaymentLogger.Log(
-                    $"Old processed transactions removed. count={removedCount}, olderThan={unixSeconds}"
-                );
+                _logger.Log(LogType.Log, $"[PaymentSdk] [PlayerPrefsProcessedTransactionStorage] Old processed transactions removed. count={removedCount}, olderThan={unixSeconds}");
             }
 
             return removedCount;
@@ -120,7 +116,7 @@ namespace GamePaymentSDK.Storage
             PlayerPrefs.DeleteKey(_storageKey);
             PlayerPrefs.Save();
 
-            PaymentLogger.Log("Processed transaction storage cleared.");
+            _logger.Log(LogType.Log, "[PaymentSdk] [PlayerPrefsProcessedTransactionStorage] Processed transaction storage cleared.");
         }
 
         private ProcessedTransactionCollection LoadCollection()
@@ -150,7 +146,7 @@ namespace GamePaymentSDK.Storage
             }
             catch (Exception exception)
             {
-                PaymentLogger.LogWarning(
+                _logger.Log(LogType.Error,
                     $"Failed to parse processed transaction storage. Storage will be reset. {exception.Message}"
                 );
 

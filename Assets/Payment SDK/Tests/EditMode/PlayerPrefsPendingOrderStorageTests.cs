@@ -18,7 +18,7 @@ namespace GamePaymentSDK.Tests.EditMode
         public void SetUp()
         {
             _storage = new PlayerPrefsPendingOrderStorage(
-                "player-1"
+                "player-1", UnityEngine.Debug.unityLogger
             );
             _storage.Clear();
         }
@@ -106,11 +106,11 @@ namespace GamePaymentSDK.Tests.EditMode
         [Test]
         public void Persistence_NewInstanceWithSameScope_SeesSavedData()
         {
-            PlayerPrefsPendingOrderStorage a = new("player-1");
+            PlayerPrefsPendingOrderStorage a = new("player-1", UnityEngine.Debug.unityLogger);
             a.Clear();
             a.Save(Order("ZPR_persist"));
 
-            PlayerPrefsPendingOrderStorage b = new("player-1");
+            PlayerPrefsPendingOrderStorage b = new("player-1", UnityEngine.Debug.unityLogger);
             bool found = b.TryGet("ZPR_persist", out _);
 
             b.Clear();
@@ -121,8 +121,8 @@ namespace GamePaymentSDK.Tests.EditMode
         [Test]
         public void Scope_DifferentPlayer_DoesNotSeeOtherPlayersOrders()
         {
-            PlayerPrefsPendingOrderStorage playerA = new("player-A");
-            PlayerPrefsPendingOrderStorage playerB = new("player-B");
+            PlayerPrefsPendingOrderStorage playerA = new("player-A", UnityEngine.Debug.unityLogger);
+            PlayerPrefsPendingOrderStorage playerB = new("player-B", UnityEngine.Debug.unityLogger);
             playerA.Clear();
             playerB.Clear();
 

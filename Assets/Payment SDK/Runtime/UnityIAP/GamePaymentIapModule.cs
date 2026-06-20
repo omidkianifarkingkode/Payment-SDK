@@ -2,48 +2,43 @@ using GamePaymentSDK.Core;
 using GamePaymentSDK.WebView;
 using UnityEngine.Purchasing;
 using UnityEngine.Purchasing.Extension;
+using UnityEngine;
 
 namespace GamePaymentSDK.UnityIAP
 {
     public sealed class GamePaymentIapModule : AbstractPurchasingModule
     {
-        private readonly PaymentConfiguration _configuration;
+        private readonly PaymentSettings _settings;
         private readonly string _playerId;
         private readonly IPaymentWebViewService _webViewService;
+        private readonly ILogger _logger;
 
         private GamePaymentIapModule(
-            PaymentConfiguration configuration,
+            PaymentSettings settings,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
-            _configuration = configuration;
+            _settings = settings;
             _playerId = playerId;
             _webViewService = webViewService;
+            _logger = logger;
         }
 
         public static GamePaymentIapModule Instance(
-            PaymentConfiguration configuration,
+            PaymentSettings settings,
             string playerId,
-            IPaymentWebViewService webViewService
-        )
+            IPaymentWebViewService webViewService,
+            ILogger logger)
         {
-            return new GamePaymentIapModule(
-                configuration,
-                playerId,
-                webViewService
-            );
+            return new GamePaymentIapModule(settings, playerId, webViewService, logger);
         }
 
         public override void Configure()
         {
             RegisterStore(
                 GamePaymentIapStoreConstants.StoreName,
-                new GamePaymentIapStore(
-                    _configuration,
-                    _playerId,
-                    _webViewService
-                )
+                new GamePaymentIapStore(_settings, _playerId, _webViewService, _logger)
             );
         }
     }

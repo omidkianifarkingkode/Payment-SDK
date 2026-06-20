@@ -1,10 +1,17 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace GamePaymentSDK.Core
 {
     public sealed class ProductCatalogCache
     {
         private readonly Dictionary<string, PaymentProduct> _products = new();
+        private ILogger _logger;
+
+        public ProductCatalogCache(ILogger logger)
+        {
+            _logger = logger;
+        }
 
         public bool IsReady { get; private set; }
 
