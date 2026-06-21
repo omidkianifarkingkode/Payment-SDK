@@ -19,7 +19,9 @@ namespace GamePaymentSDK.EditorTools
         private static readonly Color Sandbox = new Color(0.95f, 0.55f, 0.20f);   // orange
         private static readonly Color Production = new Color(0.18f, 0.70f, 0.45f);   // green
 
-        private SerializedProperty _baseUrl, _apiKey, _environment;
+        private SerializedProperty _apiKey, _environment;
+        private SerializedProperty _productionBaseUrl, _stagingBaseUrl;
+        private SerializedProperty _productRoute, _requestRoute, _claimRoute;
         private SerializedProperty _requestTimeout, _webViewTimeout;
         private SerializedProperty _claimRetryCount, _pendingOrderCleanupDays, _processedTransactionHistoryDays;
         private SerializedProperty _logEnabled, _logLevel;
@@ -28,9 +30,13 @@ namespace GamePaymentSDK.EditorTools
 
         private void OnEnable()
         {
-            _baseUrl = serializedObject.FindProperty("_baseUrl");
             _apiKey = serializedObject.FindProperty("_apiKey");
             _environment = serializedObject.FindProperty("_environment");
+            _productionBaseUrl = serializedObject.FindProperty("_productionBaseUrl");
+            _stagingBaseUrl = serializedObject.FindProperty("_stagingBaseUrl");
+            _productRoute = serializedObject.FindProperty("_productRoute");
+            _requestRoute = serializedObject.FindProperty("_requestRoute");
+            _claimRoute = serializedObject.FindProperty("_claimRoute");
             _requestTimeout = serializedObject.FindProperty("_requestTimeoutSeconds");
             _webViewTimeout = serializedObject.FindProperty("_webViewTimeoutSeconds");
             _claimRetryCount = serializedObject.FindProperty("_claimRetryCount");
@@ -45,20 +51,22 @@ namespace GamePaymentSDK.EditorTools
             serializedObject.Update();
 
             DrawHeader();
-            EditorGUILayout.Space(8);
             DrawStatusPill();
 
             EditorGUILayout.Space(6);
             Card("Payment Service", Accent, () =>
             {
-                EditorGUILayout.PropertyField(_baseUrl, new GUIContent("Base URL"));
                 DrawApiKeyField();
             });
 
             Card("Environment", EnvColor(), () =>
             {
                 EditorGUILayout.PropertyField(_environment, new GUIContent("Environment"));
-                DrawEnvBadge();
+                EditorGUILayout.PropertyField(_productionBaseUrl, new GUIContent("Production Base URL"));
+                EditorGUILayout.PropertyField(_stagingBaseUrl, new GUIContent("Staging Base URL"));
+                EditorGUILayout.PropertyField(_productRoute, new GUIContent("Products Route"));
+                EditorGUILayout.PropertyField(_requestRoute, new GUIContent("Request Route"));
+                EditorGUILayout.PropertyField(_claimRoute, new GUIContent("Claim Route"));
             });
 
             Card("Timeouts (seconds)", Accent, () =>
@@ -82,49 +90,54 @@ namespace GamePaymentSDK.EditorTools
             });
 
             EditorGUILayout.Space(6);
-            DrawEndpointPreview();
-            EditorGUILayout.Space(4);
             DrawFooterButtons();
 
             serializedObject.ApplyModifiedProperties();
+
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssets();
         }
 
-        // ---- Header band ----
-        private void DrawHeader()
-        {
-            Rect r = GUILayoutUtility.GetRect(0, 52, GUILayout.ExpandWidth(true));
-            EditorGUI.DrawRect(r, AccentDark);
+        // ---- Active environment helpers ----
+        private bool IsProduction =>
+            _environment.enumValueIndex == (int)PaymentEnvironment.Production;
 
+        private SerializedProperty ActiveBaseUrlProp =>
+            IsProduction ? _productionBaseUrl : _stagingBaseUrl;
+
+        // ---- Header band ----
+        private new void DrawHeader()
+        {
+            bool sandbox = _environment.enumValueIndex == (int)PaymentEnvironment.Staging;
+            string text = sandbox ? "SANDBOX" : "PRODUCTION";
+
+            Rect r = GUILayoutUtility.GetRect(0, 70, GUILayout.ExpandWidth(true));
             Rect strip = new Rect(r.x, r.y, r.width, r.height * 0.5f);
-            EditorGUI.DrawRect(strip, Accent);
+            EditorGUI.DrawRect(strip, sandbox ? Sandbox : Production);
 
             var title = new GUIStyle(EditorStyles.boldLabel)
             {
                 normal = { textColor = Color.white },
                 fontSize = 15,
                 padding = new RectOffset(12, 8, 6, 0),
-                alignment = TextAnchor.UpperLeft
-            };
-            var sub = new GUIStyle(EditorStyles.miniLabel)
-            {
-                normal = { textColor = new Color(1f, 1f, 1f, 0.85f) },
-                padding = new RectOffset(12, 8, 0, 6),
-                alignment = TextAnchor.LowerLeft
+                alignment = TextAnchor.MiddleLeft
             };
 
-            GUI.Label(new Rect(r.x, r.y, r.width, 30), "💳  Game Payment SDK", title);
-            GUI.Label(new Rect(r.x, r.y + 28, r.width, 22), "Payment settings & runtime tuning", sub);
+            GUI.Label(new Rect(r.x, r.y, r.width, 30), $"Game Payment SDK ({text})", title);
         }
 
         // ---- Status pill ----
         private void DrawStatusPill()
         {
-            bool hasBaseUrl = !string.IsNullOrWhiteSpace(_baseUrl.stringValue);
+            bool hasBaseUrl = !string.IsNullOrWhiteSpace(ActiveBaseUrlProp.stringValue);
             bool hasApiKey = !string.IsNullOrWhiteSpace(_apiKey.stringValue);
             bool complete = hasBaseUrl && hasApiKey;
 
-            string label = complete ? "✓  Configuration complete" : "!  Missing required fields";
-            Color color = complete ? Ok : Warn;
+            if (complete)
+                return;
+
+            string label = "!  Missing required fields";
+            Color color = Warn;
 
             Rect r = GUILayoutUtility.GetRect(0, 24, GUILayout.ExpandWidth(true));
             EditorGUI.DrawRect(r, new Color(color.r, color.g, color.b, 0.18f));
@@ -137,11 +150,8 @@ namespace GamePaymentSDK.EditorTools
             };
             GUI.Label(r, label, style);
 
-            if (!complete)
-            {
-                if (!hasBaseUrl) Bullet("Base URL");
-                if (!hasApiKey) Bullet("API Key");
-            }
+            if (!hasBaseUrl) Bullet(IsProduction ? "Production Base URL" : "Staging Base URL");
+            if (!hasApiKey) Bullet("API Key");
         }
 
         private static void Bullet(string text)
@@ -174,43 +184,6 @@ namespace GamePaymentSDK.EditorTools
             }
         }
 
-        private void DrawEnvBadge()
-        {
-            bool sandbox = _environment.enumValueIndex == (int)PaymentEnvironment.Sandbox;
-            string text = sandbox ? "SANDBOX" : "PRODUCTION";
-            Color color = sandbox ? Sandbox : Production;
-
-            Rect r = GUILayoutUtility.GetRect(0, 20, GUILayout.ExpandWidth(true));
-            Rect badge = new Rect(r.x, r.y, 110, r.height);
-            EditorGUI.DrawRect(badge, new Color(color.r, color.g, color.b, 0.20f));
-            EditorGUI.DrawRect(new Rect(badge.x, badge.y, 4, badge.height), color);
-
-            var s = new GUIStyle(EditorStyles.miniBoldLabel)
-            {
-                normal = { textColor = color },
-                alignment = TextAnchor.MiddleCenter
-            };
-            GUI.Label(badge, text, s);
-        }
-
-        private void DrawEndpointPreview()
-        {
-            string baseUrl = (_baseUrl.stringValue ?? string.Empty).TrimEnd('/');
-            string P(string suffix) => string.IsNullOrEmpty(baseUrl) ? "—" : baseUrl + suffix;
-
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                var head = new GUIStyle(EditorStyles.miniBoldLabel) { normal = { textColor = Accent } };
-                EditorGUILayout.LabelField("◈  Resolved endpoints", head);
-                using (new EditorGUI.DisabledScope(true))
-                {
-                    EditorGUILayout.TextField("Products", P("/v1/products"));
-                    EditorGUILayout.TextField("Request", P("/v1/payments/request"));
-                    EditorGUILayout.TextField("Claim", P("/v1/payments/claim"));
-                }
-            }
-        }
-
         private void DrawFooterButtons()
         {
             using (new EditorGUILayout.HorizontalScope())
@@ -228,7 +201,7 @@ namespace GamePaymentSDK.EditorTools
 
         private Color EnvColor()
         {
-            return _environment.enumValueIndex == (int)PaymentEnvironment.Sandbox ? Sandbox : Production;
+            return _environment.enumValueIndex == (int)PaymentEnvironment.Staging ? Sandbox : Production;
         }
 
         // ---- Accent card ----

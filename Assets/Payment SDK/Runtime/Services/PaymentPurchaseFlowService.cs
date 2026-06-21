@@ -42,7 +42,7 @@ namespace GamePaymentSDK.Services
 {
     public sealed class PaymentPurchaseFlowService : IPaymentPurchaseFlowService
     {
-        private readonly PaymentSettings _configuration;
+        private readonly IPaymentSettings _configuration;
         private readonly IPaymentRequestService _paymentRequestService;
         private readonly IPaymentClaimService _paymentClaimService;
         private readonly IPaymentWebViewService _webViewService;
@@ -54,7 +54,7 @@ namespace GamePaymentSDK.Services
             _paymentRequestService.IsPurchaseInProgress;
 
         public PaymentPurchaseFlowService(
-            PaymentSettings configuration,
+            IPaymentSettings configuration,
             IPaymentRequestService paymentRequestService,
             IPaymentClaimService paymentClaimService,
             IPaymentWebViewService webViewService,

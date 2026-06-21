@@ -1,6 +1,8 @@
-using System.IO;
 using GamePaymentSDK.Core;
+using GamePaymentSDK.WebView.UniWebViewAdapter;
+using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace GamePaymentSDK.EditorTools
@@ -11,11 +13,38 @@ namespace GamePaymentSDK.EditorTools
     /// </summary>
     public static class PaymentSettingsCreator
     {
-        private const string MenuPath = "Tools/Game Payment SDK/Create Payment Settings";
+        private const string CreateMenuPath = "Tools/KingKode/Game Payment SDK/Create Settings";
+        private const string LocateMenuPath = "Tools/KingKode/Game Payment SDK/Locate Settings";
+        private const string CreateBoostrapper = "Tools/KingKode/Game Payment SDK/Create Bootstrapper";
         private const string TargetFolder = "Assets/Resources/GamePayment";
         private const string AssetPath = TargetFolder + "/PaymentSettings.asset";
 
-        [MenuItem(MenuPath)]
+        [MenuItem(LocateMenuPath)]
+        public static void LocatePaymentSettings()
+        {
+            PaymentSettings existing = AssetDatabase.LoadAssetAtPath<PaymentSettings>(AssetPath);
+
+            if (existing != null)
+            {
+                Selection.activeObject = existing;
+                EditorGUIUtility.PingObject(existing);
+
+                return;
+            }
+
+            bool create = EditorUtility.DisplayDialog(
+                "Payment Settings not found",
+                $"No PaymentSettings asset exists at:\n{AssetPath}\n\n" +
+                "The SDK loads it at runtime via Resources.Load, so it must live under a " +
+                "'Resources' folder. Create it now?",
+                "Create",
+                "Cancel");
+
+            if (create)
+                CreatePaymentSettings();
+        }
+
+        [MenuItem(CreateMenuPath)]
         public static void CreatePaymentSettings()
         {
             PaymentSettings existing = AssetDatabase.LoadAssetAtPath<PaymentSettings>(AssetPath);
@@ -51,6 +80,31 @@ namespace GamePaymentSDK.EditorTools
             EditorGUIUtility.PingObject(asset);
 
             Debug.Log($"[GamePaymentSDK] Created PaymentSettings at {AssetPath}", asset);
+        }
+
+        [MenuItem(CreateBoostrapper)]
+        public static void CreatePaymentServiceObject()
+        {
+            // Root: PaymentService + PaymentBootstrap
+            var root = new GameObject("PaymentService");
+            Undo.RegisterCreatedObjectUndo(root, "Create Payment Service");
+            Undo.AddComponent<PaymentBootstrap>(root);
+
+            // Child: WebView + UniWebViewPaymentService
+            var webView = new GameObject("WebView");
+            Undo.RegisterCreatedObjectUndo(webView, "Create Payment Service");
+            Undo.AddComponent<UniWebViewPaymentService>(webView);
+
+            // Parent under the root (respects prefab/stage context and aligns transform)
+            GameObjectUtility.SetParentAndAlign(webView, root);
+
+            // Place the root sensibly in the active scene / current selection context
+            GameObjectUtility.SetParentAndAlign(root, Selection.activeGameObject);
+
+            // Select + ping, and mark the scene dirty so the change is saved
+            Selection.activeGameObject = root;
+            EditorGUIUtility.PingObject(root);
+            EditorSceneManager.MarkSceneDirty(root.scene);
         }
 
         private static void EnsureFolder(string folder)

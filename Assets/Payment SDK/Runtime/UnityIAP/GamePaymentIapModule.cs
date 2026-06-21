@@ -1,20 +1,19 @@
 using GamePaymentSDK.Core;
 using GamePaymentSDK.WebView;
-using UnityEngine.Purchasing;
-using UnityEngine.Purchasing.Extension;
 using UnityEngine;
+using UnityEngine.Purchasing.Extension;
 
 namespace GamePaymentSDK.UnityIAP
 {
     public sealed class GamePaymentIapModule : AbstractPurchasingModule
     {
-        private readonly PaymentSettings _settings;
+        private readonly IPaymentSettings _settings;
         private readonly string _playerId;
         private readonly IPaymentWebViewService _webViewService;
         private readonly ILogger _logger;
 
         private GamePaymentIapModule(
-            PaymentSettings settings,
+            IPaymentSettings settings,
             string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)
@@ -26,7 +25,7 @@ namespace GamePaymentSDK.UnityIAP
         }
 
         public static GamePaymentIapModule Instance(
-            PaymentSettings settings,
+            IPaymentSettings settings,
             string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)

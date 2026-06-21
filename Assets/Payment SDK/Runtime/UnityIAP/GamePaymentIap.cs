@@ -7,12 +7,12 @@ namespace GamePaymentSDK.UnityIAP
 {
     public static class GamePaymentIap
     {
-        private static PaymentSettings _settings;
+        private static IPaymentSettings _settings;
         private static IPaymentWebViewService _webViewService;
         private static ILogger _logger;
 
         internal static void Setup(
-            PaymentSettings settings,
+            IPaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {

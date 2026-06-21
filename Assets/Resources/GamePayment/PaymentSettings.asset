@@ -12,9 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30b6d71009e4d134280e095b5f9f3294, type: 3}
   m_Name: PaymentSettings
   m_EditorClassIdentifier: 
-  _baseUrl: fdfd
-  _apiKey: ddfffdf
-  _environment: 0
+  _apiKey: T-apikey-pvtseqgvzzsu7wh4yxo2k1h3
+  _environment: 1
+  _productionBaseUrl: https://payment.kingkodegames.ir
+  _stagingBaseUrl: https://payment-staging.kingkodegames.ir
+  _productRoute: api/v1/products
+  _requestRoute: api/v1/payments/request
+  _claimRoute: api/v1/payments/claim
   _requestTimeoutSeconds: 20
   _webViewTimeoutSeconds: 300
   _claimRetryCount: 3

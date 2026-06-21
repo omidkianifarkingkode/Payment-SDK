@@ -25,6 +25,11 @@ namespace GamePaymentSDK.Samples
             };
         }
 
+        private async void Start()
+        {
+            await GamePayment.InitializeAsync("test-player");
+        }
+
         public void Grant(string productKey)
         {
             ProductReward reward = _rewards.Find(x => x.ProductKey == productKey);

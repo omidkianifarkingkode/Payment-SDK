@@ -24,7 +24,7 @@ public sealed class PaymentIapBootstrap : MonoBehaviour
     [Tooltip("Assign UniWebViewPaymentService for device builds, or MockPaymentWebViewService for Editor testing.")]
     [SerializeField] private MonoBehaviour _webViewServiceComponent;
 
-    private PaymentSettings _settings;
+    private IPaymentSettings _settings;
 
     private void Start()
     {
@@ -59,6 +59,7 @@ public sealed class PaymentIapBootstrap : MonoBehaviour
 
     private void OnDestroy()
     {
-        _settings?.Dispose();
+        PaymentSettings.Dispose();
+        _settings = null;
     }
 }

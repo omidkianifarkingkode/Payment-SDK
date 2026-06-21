@@ -15,7 +15,7 @@ namespace GamePaymentSDK.UnityIAP
 {
     public sealed class GamePaymentIapStore : IStore, IDisposable
     {
-        private readonly PaymentSettings _settings;
+        private readonly IPaymentSettings _settings;
         private readonly string _playerId;
         private readonly IPaymentWebViewService _webViewService;
         private readonly ILogger _logger;
@@ -26,7 +26,7 @@ namespace GamePaymentSDK.UnityIAP
         private bool _isRetrievingProducts;
 
         public GamePaymentIapStore(
-            PaymentSettings settings,
+            IPaymentSettings settings,
             string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)

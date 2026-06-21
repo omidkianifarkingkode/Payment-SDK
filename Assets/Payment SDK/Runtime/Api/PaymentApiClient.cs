@@ -15,13 +15,13 @@ namespace GamePaymentSDK.Api
         private const string HeaderAccept = "Accept";
         private const string JsonContentType = "application/json";
 
-        private readonly PaymentSettings _configuration;
+        private readonly IPaymentSettings _configuration;
         private readonly ILogger _logger;
         private readonly string _baseUrl;
         private readonly bool _isValid;
         private readonly string _configError;
 
-        public PaymentApiClient(PaymentSettings configuration, ILogger logger)
+        public PaymentApiClient(IPaymentSettings configuration, ILogger logger)
         {
             _configuration = configuration;
             _logger = logger;
@@ -35,7 +35,7 @@ namespace GamePaymentSDK.Api
             }
 
             _isValid = _configuration.IsValid(out _configError);
-            _baseUrl = _configuration.GetNormalizedBaseUrl();
+            _baseUrl = _configuration.BaseUrl;
         }
 
         public async Task<PaymentResult<List<PaymentProduct>>> GetProductsAsync()
@@ -43,7 +43,7 @@ namespace GamePaymentSDK.Api
             if (!EnsureValid(out PaymentResult<List<PaymentProduct>> invalidResult))
                 return invalidResult;
 
-            string url = $"{_baseUrl}/v1/products";
+            string url = _configuration.ProductsUrl;
 
             using UnityWebRequest request = UnityWebRequest.Get(url);
             ApplyCommonHeaders(request);
@@ -96,10 +96,7 @@ namespace GamePaymentSDK.Api
             return PaymentResult<List<PaymentProduct>>.Ok(products);
         }
 
-        public async Task<PaymentResult<PaymentRequestResponseDto>> RequestPaymentAsync(
-            string playerId,
-            string productKey
-        )
+        public async Task<PaymentResult<PaymentRequestResponseDto>> RequestPaymentAsync(string playerId, string productKey)
         {
             if (!EnsureValid(out PaymentResult<PaymentRequestResponseDto> invalidResult))
                 return invalidResult;
@@ -120,7 +117,7 @@ namespace GamePaymentSDK.Api
                 );
             }
 
-            string url = $"{_baseUrl}/v1/payments/request";
+            string url = _configuration.RequestUrl;
 
             PaymentRequestDto body = new()
             {
@@ -169,10 +166,7 @@ namespace GamePaymentSDK.Api
             }
         }
 
-        public async Task<PaymentResult<List<ClaimItemDto>>> ClaimAsync(
-            string playerId,
-            string orderId = null
-        )
+        public async Task<PaymentResult<List<ClaimItemDto>>> ClaimAsync(string playerId, string orderId = null)
         {
             if (!EnsureValid(out PaymentResult<List<ClaimItemDto>> invalidResult))
                 return invalidResult;
@@ -185,7 +179,7 @@ namespace GamePaymentSDK.Api
                 );
             }
 
-            string url = $"{_baseUrl}/v1/payments/claim";
+            string url = _configuration.ClaimUrl;
 
             ClaimRequestDto body = new()
             {
