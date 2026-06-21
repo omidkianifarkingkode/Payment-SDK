@@ -68,7 +68,7 @@ namespace GamePaymentSDK.Tests.EditMode
         {
             PaymentSettings settings = CreateSettings("https://api.example.com/api/", "key");
 
-            Assert.AreEqual("https://api.example.com/api", settings.GetNormalizedBaseUrl());
+            Assert.AreEqual("https://api.example.com/api", settings.BaseUrl);
 
             Object.DestroyImmediate(settings);
         }
@@ -78,7 +78,7 @@ namespace GamePaymentSDK.Tests.EditMode
         {
             PaymentSettings settings = CreateSettings(null, "key");
 
-            Assert.AreEqual(string.Empty, settings.GetNormalizedBaseUrl());
+            Assert.AreEqual(string.Empty, settings.BaseUrl);
 
             Object.DestroyImmediate(settings);
         }

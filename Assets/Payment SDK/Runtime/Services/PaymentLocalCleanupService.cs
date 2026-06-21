@@ -7,12 +7,12 @@ namespace GamePaymentSDK.Services
 {
     public sealed class PaymentLocalCleanupService
     {
-        private readonly PaymentSettings _configuration;
+        private readonly IPaymentSettings _configuration;
         private readonly IPendingOrderStorage _pendingOrderStorage;
         private readonly IProcessedTransactionStorage _processedTransactionStorage;
         private readonly ILogger _logger;
 
-        public PaymentLocalCleanupService(PaymentSettings configuration, IPendingOrderStorage pendingOrderStorage, IProcessedTransactionStorage processedTransactionStorage, ILogger logger)
+        public PaymentLocalCleanupService(IPaymentSettings configuration, IPendingOrderStorage pendingOrderStorage, IProcessedTransactionStorage processedTransactionStorage, ILogger logger)
         {
             _configuration = configuration;
             _pendingOrderStorage = pendingOrderStorage;

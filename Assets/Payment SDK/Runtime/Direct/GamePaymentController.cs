@@ -19,7 +19,7 @@ namespace GamePaymentSDK.Direct
         public event Action<PaymentPurchaseResult> PurchaseSucceeded;
         public event Action<PaymentPurchaseFailedEventArgs> PurchaseFailed;
 
-        private readonly PaymentSettings _settings;
+        private readonly IPaymentSettings _settings;
         private readonly string _playerId;
         private readonly ILogger _logger;
         private readonly IPaymentApiClient _apiClient;
@@ -48,7 +48,7 @@ namespace GamePaymentSDK.Direct
         public string PlayerId => _playerId;
 
         public GamePaymentController(
-            PaymentSettings settings,
+            IPaymentSettings settings,
             string playerId,
             IPaymentWebViewService webViewService,
             ILogger logger)

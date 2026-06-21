@@ -17,7 +17,7 @@ namespace GamePaymentSDK.Direct
         private static GamePaymentController _controller;
         private static ILogger _logger;
 
-        private static PaymentSettings _settings;
+        private static IPaymentSettings _settings;
         private static IPaymentWebViewService _webViewService;
 
         public static bool IsInitialized =>
@@ -40,7 +40,7 @@ namespace GamePaymentSDK.Direct
         /// Afterwards call <see cref="InitializeAsync"/> when the player identity is known.
         /// </summary>
         internal static void Setup(
-            PaymentSettings settings,
+            IPaymentSettings settings,
             IPaymentWebViewService webViewService,
             ILogger logger)
         {

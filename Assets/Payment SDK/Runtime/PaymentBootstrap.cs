@@ -6,10 +6,8 @@ using UnityEngine;
 
 public sealed class PaymentBootstrap : MonoBehaviour
 {
-    [Header("WebView")]
-    [SerializeField] private MonoBehaviour _webViewServiceComponent;
-
-    private PaymentSettings _settings;
+    private IPaymentWebViewService _webView;
+    private IPaymentSettings _settings;
     private ILogger _logger;
 
     private void Start()
@@ -34,18 +32,14 @@ public sealed class PaymentBootstrap : MonoBehaviour
             filterLogType = _settings.LogLevel
         };
 
-        if (_webViewServiceComponent is not IPaymentWebViewService webViewService)
-        {
-            _logger.Log(LogType.Error, $"[PaymentSdk] [PaymentBootstrap] {nameof(_webViewServiceComponent)} must implement {nameof(IPaymentWebViewService)}");
-            return;
-        }
+        _webView = GetComponentInChildren<IPaymentWebViewService>();
 
         GamePayment.Initialized += OnInitialized;
         GamePayment.ProductsUpdated += OnProductsUpdated;
         GamePayment.PurchaseSucceeded += OnPurchaseSucceeded;
         GamePayment.PurchaseFailed += OnPurchaseFailed;
 
-        GamePayment.Setup(_settings, webViewService, _logger);
+        GamePayment.Setup(_settings, _webView, _logger);
     }
 
     public async void BuySmallGemPack()
@@ -81,6 +75,7 @@ public sealed class PaymentBootstrap : MonoBehaviour
         GamePayment.PurchaseFailed -= OnPurchaseFailed;
 
         GamePayment.Dispose();
-        _settings?.Dispose();
+        PaymentSettings.Dispose();
+        _settings = null;
     }
 }
